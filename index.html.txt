@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Pro Receipt | A3 Print + History | Mobile Ready</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #eef2f7;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 16px 12px 32px;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Main layout for desktop/tablet */
+        .main-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .input-card {
+            flex: 1.2;
+            min-width: 280px;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 20px 18px;
+        }
+
+        .preview-card {
+            flex: 1;
+            min-width: 300px;
+            background: #f2f5f9;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 18px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .history-card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 20px 18px;
+            margin-top: 10px;
+        }
+
+        .input-card h2, .history-card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1e2b3c, #2c4c6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 1.2rem;
+            border-left: 5px solid #2c7da0;
+            padding-left: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #1f3b4c;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 24px;
+            font-size: 16px;
+            background-color: #fefefe;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44,125,160,0.15);
+        }
+
+        .items-section {
+            background: #f8fafd;
+            border-radius: 24px;
+            padding: 14px;
+            margin: 1.2rem 0 1rem;
+        }
+
+        .items-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-add {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .item-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .item-name { flex: 3; min-width: 120px; }
+        .item-qty { flex: 1; min-width: 70px; }
+        .item-price { flex: 1; min-width: 85px; }
+
+        .item-row input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1.5px solid #d1d9e8;
+            font-size: 14px;
+        }
+
+        .remove-item {
+            background: #e07c6c;
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.3rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary, .btn-print, .btn-save-history {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 48px;
+        }
+
+        .btn-primary { background: #2c7da0; color: white; }
+        .btn-secondary { background: #4b6e8a; color: white; }
+        .btn-print { background: #5f7f6b; color: white; }
+        .btn-save-history { background: #e6a017; color: white; }
+
+        .receipt-paper {
+            width: 100%;
+            max-width: 210mm; /* A4/A3 compatible preview */
+            background: white;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 18px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 11pt;
+            color: #1e2a36;
+            margin: 0 auto;
+        }
+
+        /* History panel styles */
+        .history-toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .sort-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .sort-btn.active {
+            background: #2c7da0;
+            color: white;
+        }
+
+        .clear-all-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .history-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8fafd;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-left: 4px solid #2c7da0;
+        }
+
+        .history-info {
+            flex: 3;
+            font-size: 0.85rem;
+        }
+
+        .history-store {
+            font-weight: bold;
+            color: #1e4663;
+        }
+
+        .history-date {
+            font-size: 0.7rem;
+            color: #5f6c7a;
+        }
+
+        .history-total {
+            font-weight: bold;
+            color: #2c7da0;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .load-history-btn, .delete-history-btn {
+            background: none;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .load-history-btn {
+            background: #2c7da0;
+            color: white;
+        }
+
+        .delete-history-btn {
+            background: #e07c6c;
+            color: white;
+        }
+
+        .empty-history {
+            text-align: center;
+            color: #8ba0b5;
+            padding: 30px;
+        }
+
+        /* Print styles - A3 default */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableReceipt, #printableReceipt * {
+                visibility: visible;
+            }
+            #printableReceipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 10mm;
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2a36;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.25s;
+            pointer-events: none;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .toast-msg { white-space: normal; max-width: 85vw; }
+            .history-item { flex-direction: column; align-items: stretch; }
+            .history-actions { justify-content: flex-end; }
+        }
+
+        .print-container { display: none; }
+        .paper-size-select { max-width: 150px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="main-grid">
+        <!-- Left: Input Form -->
+        <div class="input-card">
+            <h2>📄 Receipt Builder</h2>
+            <div class="form-group">
+                <label>🏢 Store Name</label>
+                <input type="text" id="storeName" placeholder="Store Name" value="Sunshine Mart">
+            </div>
+            <div class="form-group">
+                <label>📞 Contact</label>
+                <input type="text" id="storeContact" placeholder="Phone/Email" value="+1 234 567 890">
+            </div>
+            <div class="form-group">
+                <label>🧾 Receipt Title</label>
+                <input type="text" id="receiptTitle" placeholder="Title" value="SALES RECEIPT">
+            </div>
+            <div class="form-group">
+                <label>👤 Customer Name</label>
+                <input type="text" id="customerName" placeholder="Customer" value="Walk-in Customer">
+            </div>
+            <div class="form-group">
+                <label>📅 Date</label>
+                <input type="date" id="receiptDate">
+            </div>
+            <div class="form-group">
+                <label>📄 Print Paper Size (Default A3)</label>
+                <select id="paperSize" class="paper-size-select">
+                    <option value="A3">A3 (297x420mm) - Default</option>
+                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="A5">A5 (148x210mm)</option>
+                    <option value="Letter">Letter (8.5x11in)</option>
+                </select>
+            </div>
+
+            <div class="items-section">
+                <div class="items-header">
+                    <h3>🛒 Items</h3>
+                    <button type="button" class="btn-add" id="addItemBtn">+ Add Item</button>
+                </div>
+                <div id="itemsContainer"></div>
+            </div>
+
+            <div class="form-group">
+                <label>💬 Footer Note</label>
+                <textarea id="extraNote" rows="2" placeholder="Thank you!"></textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh</button>
+                <button class="btn-print" id="printReceiptBtn">🖨️ Print (A3 preset)</button>
+                <button class="btn-secondary" id="savePdfBtn">📥 Save PDF</button>
+                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
+            </div>
+        </div>
+
+        <!-- Right: Receipt Preview -->
+        <div class="preview-card">
+            <h3>🧾 Receipt Preview</h3>
+            <div id="receiptPreviewContainer" class="receipt-paper"></div>
+            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Print dialog defaults to A3, you can change in printer settings</p>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="history-card">
+        <h2>📜 Receipt History</h2>
+        <div class="history-toolbar">
+            <button class="sort-btn" data-sort="date">📅 Sort by Date</button>
+            <button class="sort-btn" data-sort="name">🔤 Sort by Store</button>
+            <button class="sort-btn" data-sort="total">💰 Sort by Total</button>
+            <button class="clear-all-btn" id="clearAllHistoryBtn">🗑️ Clear All</button>
+        </div>
+        <div id="historyList" class="history-list">
+            <div class="empty-history">No saved receipts yet. Create and save!</div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden print container -->
+<div id="printableReceipt" style="display: none;"></div>
+<div id="toastMsg" class="toast-msg"></div>
+
+<script>
+    // Data
+    let itemsArray = [
+        { name: "Organic Apples", quantity: 2, price: 1.99 },
+        { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }
+    ];
+    
+    let receiptHistory = [];
+    let currentSort = "date"; // date, name, total
+
+    // Load history from localStorage
+    function loadHistoryFromStorage() {
+        const stored = localStorage.getItem("receiptHistory");
+        if (stored) {
+            try {
+                receiptHistory = JSON.parse(stored);
+            } catch(e) { receiptHistory = []; }
+        }
+        if (!receiptHistory.length) receiptHistory = [];
+        renderHistoryList();
+    }
+
+    function saveHistoryToStorage() {
+        localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory));
+    }
+
+    function showToast(message, duration = 2000) {
+        const toast = document.getElementById('toastMsg');
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => toast.style.opacity = '0', duration);
+    }
+
+    function setDefaultDate() {
+        const dateInput = document.getElementById('receiptDate');
+        if (!dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function renderItemRows() {
+        const container = document.getElementById('itemsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        itemsArray.forEach((item, idx) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'item-row';
+            rowDiv.innerHTML = `
+                <input type="text" class="item-name" placeholder="Item" value="${escapeHtml(item.name)}">
+                <input type="number" class="item-qty" placeholder="Qty" value="${item.quantity}" step="1" min="1">
+                <input type="number" class="item-price" placeholder="Price" value="${item.price}" step="0.01" min="0">
+                <button type="button" class="remove-item" data-idx="${idx}">✕</button>
+            `;
+            container.appendChild(rowDiv);
+        });
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                if (!isNaN(idx)) {
+                    itemsArray.splice(idx, 1);
+                    renderItemRows();
+                    updateReceiptDisplay();
+                    showToast("Item removed", 1000);
+                }
+            });
+        });
+        attachItemInputEvents();
+    }
+
+    function attachItemInputEvents() {
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach((row, idx) => {
+            const nameInput = row.querySelector('.item-name');
+            const qtyInput = row.querySelector('.item-qty');
+            const priceInput = row.querySelector('.item-price');
+            const update = () => {
+                if (itemsArray[idx]) {
+                    itemsArray[idx].name = nameInput?.value || itemsArray[idx].name;
+                    let qty = parseFloat(qtyInput?.value);
+                    itemsArray[idx].quantity = isNaN(qty) ? 1 : Math.max(1, qty);
+                    let price = parseFloat(priceInput?.value);
+                    itemsArray[idx].price = isNaN(price) ? 0 : price;
+                    updateReceiptDisplay();
+                }
+            };
+            nameInput?.addEventListener('input', update);
+            qtyInput?.addEventListener('input', update);
+            priceInput?.addEventListener('input', update);
+        });
+    }
+
+    function getCurrentReceiptData() {
+        const storeName = document.getElementById('storeName')?.value || "Store";
+        const storeContact = document.getElementById('storeContact')?.value || "";
+        const receiptTitle = document.getElementById('receiptTitle')?.value || "RECEIPT";
+        const customerName = document.getElementById('customerName')?.value || "Guest";
+        let dateVal = document.getElementById('receiptDate')?.value;
+        if (!dateVal) dateVal = new Date().toISOString().split('T')[0];
+        const extraNote = document.getElementById('extraNote')?.value || "";
+        
+        let subtotal = 0;
+        const itemsCopy = [];
+        for (let item of itemsArray) {
+            const qty = parseFloat(item.quantity) || 0;
+            const price = parseFloat(item.price) || 0;
+            const total = qty * price;
+            subtotal += total;
+            itemsCopy.push({ ...item, quantity: qty, price: price, total: total });
+        }
+        const grandTotal = subtotal;
+        const receiptId = 'RCPT-' + Date.now().toString().slice(-6);
+        
+        return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal, receiptId, timestamp: Date.now() };
+    }
+
+    function generateReceiptHTMLFromData(data) {
+        const { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items, subtotal, grandTotal, receiptId } = data;
+        let itemsHtml = '';
+        for (let item of items) {
+            const qty = item.quantity;
+            const price = item.price;
+            const total = qty * price;
+            itemsHtml += `<tr><td class="item-name-col">${escapeHtml(item.name)}</td><td style="text-align:center">${qty}</td><td style="text-align:right">$${price.toFixed(2)}</td><td style="text-align:right">$${total.toFixed(2)}</td></tr>`;
+        }
+        if (items.length === 0) itemsHtml = '<tr><td colspan="4" style="text-align:center">— No items —</td></tr>';
+        
+        return `
+            <div class="receipt-header">
+                <div class="receipt-title">${escapeHtml(storeName.toUpperCase())}</div>
+                <div class="store-name">${escapeHtml(receiptTitle)}</div>
+                <div style="font-size:0.75rem;">${escapeHtml(storeContact)}</div>
+            </div>
+            <div class="receipt-details">
+                <div><strong>Date:</strong> ${escapeHtml(dateVal)}</div>
+                <div><strong>Customer:</strong> ${escapeHtml(customerName)}</div>
+                <div><strong>Receipt ID:</strong> ${escapeHtml(receiptId)}</div>
+            </div>
+            <table class="receipt-items">
+                <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            <div class="total-row">
+                <div>Subtotal: $${subtotal.toFixed(2)}</div>
+                <div><strong>TOTAL: $${grandTotal.toFixed(2)}</strong></div>
+            </div>
+            <div class="footer-note">
+                ${extraNote ? escapeHtml(extraNote) : "Thank you for your purchase!"}<br>
+                * Digital Receipt *
+            </div>
+        `;
+    }
+
+    function generateCurrentReceiptHTML() {
+        const data = getCurrentReceiptData();
+        return generateReceiptHTMLFromData(data);
+    }
+
+    function updateReceiptDisplay() {
+        const previewContainer = document.getElementById('receiptPreviewContainer');
+        if (previewContainer) {
+            previewContainer.innerHTML = generateCurrentReceiptHTML();
+        }
+    }
+
+    function syncItemsFromDOM() {
+        const rows = document.querySelectorAll('.item-row');
+        const newItems = [];
+        rows.forEach(row => {
+            const name = row.querySelector('.item-name')?.value || '';
+            let qty = parseFloat(row.querySelector('.item-qty')?.value);
+            if (isNaN(qty)) qty = 1;
+            let price = parseFloat(row.querySelector('.item-price')?.value);
+            if (isNaN(price)) price = 0;
+            newItems.push({ name, quantity: qty, price });
+        });
+        if (newItems.length) itemsArray = newItems;
+    }
+
+    // PRINT with selected paper size (A3 by default)
+    function printReceipt() {
+        syncItemsFromDOM();
+        updateReceiptDisplay();
+        const receiptData = getCurrentReceiptData();
+        const receiptHTML = generateReceiptHTMLFromData(receiptData);
+        const paperSize = document.getElementById('paperSize').value;
+        
+        // Map paper size to CSS @page size
+        let pageSizeCSS = '';
+        switch(paperSize) {
+            case 'A3': pageSizeCSS = 'A3 landscape? No, portrait A3'; break;
+            case 'A4': pageSizeCSS = 'A4'; break;
+            case 'A5': pageSizeCSS = 'A5'; break;
+            case 'Letter': pageSizeCSS = 'letter'; break;
+            default: pageSizeCSS = 'A3';
+        }
+        
+        const printDiv = document.getElementById('printableReceipt');
+        printDiv.style.display = 'block';
+        printDiv.innerHTML = `
+            <div style="width:100%; margin:0 auto; padding:10mm; font-family:'Courier New', monospace; font-size:11pt;">
+                ${receiptHTML}
+            </div>
+            <style>
+                .receipt-header { text-align:center; margin-bottom:1rem; border-bottom:2px dashed #aaa; padding-bottom:0.7rem; }
+                .receipt-title { font-size:1.6rem; font-weight:bold; }
+                .store-name { font-size:1.1rem; font-weight:600; }
+                .receipt-details { margin:1rem 0; font-size:0.9rem; }
+                .receipt-items { width:100%; margin:1rem 0; border-collapse:collapse; }
+                .receipt-items th, .receipt-items td { text-align:left; padding:6px 2px; border-bottom:1px dotted #ccc; }
+                .total-row { margin-top:1rem; text-align:right; font-weight:bold; border-top:2px solid #333; padding-top:0.5rem; }
+                .footer-note { margin-top:1.5rem; text-align:center; font-size:0.7rem; border-top:1px dashed #bbb; padding-top:0.6rem; }
+                @page { size: ${paperSize} portrait; margin: 8mm; }
+                @media print { body { margin:0; } }
+            </style>
+        `;
+        
+        window.print();
+        setTimeout(() => {
+            printDiv.style.display = 'none';
+            printDiv.innerHTML = '';
+        }, 1000);
+        showToast(`Print dialog opened (${paperSize} preset)`, 1800);
+    }
+
+    async function downloadReceiptAsPDF() {
+        syncItemsFromDOM();
+        updateReceiptDisplay();
+        const element = document.getElementById('receiptPreviewContainer');
+        if (!element) return;
+        const paperSize = document.getElementById('paperSize').value;
+        let pdfFormat = 'a4';
+        if (paperSize === 'A3') pdfFormat = 'a3';
+        else if (paperSize === 'A4') pdfFormat = 'a4';
+        else if (paperSize === 'A5') pdfFormat = 'a5';
+        else if (paperSize === 'Letter') pdfFormat = 'letter';
+        
+        const originalWidth = element.style.width;
+        element.style.width = paperSize === 'A3' ? '297mm' : (paperSize === 'A4' ? '210mm' : '148mm');
+        
+        const opt = {
+            margin: [5, 5, 5, 5],
+            filename: `receipt_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true },
+            jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' }
+        };
+        try {
+            await html2pdf().set(opt).from(element).save();
+            showToast(`PDF saved (${paperSize})`, 2000);
+        } catch (err) {
+            alert("PDF error");
+        } finally {
+            element.style.width = originalWidth;
+        }
+    }
+
+    // Save current receipt to history
+    function saveToHistory() {
+        syncItemsFromDOM();
+        const data = getCurrentReceiptData();
+        const historyEntry = {
+            id: Date.now(),
+            storeName: data.storeName,
+            customerName: data.customerName,
+            date: data.dateVal,
+            total: data.grandTotal,
+            timestamp: data.timestamp,
+            fullData: data,
+            receiptHTML: generateReceiptHTMLFromData(data)
+        };
+        receiptHistory.unshift(historyEntry);
+        saveHistoryToStorage();
+        renderHistoryList();
+        showToast("Receipt saved to history!", 1500);
+    }
+
+    function renderHistoryList() {
+        const container = document.getElementById('historyList');
+        if (!container) return;
+        
+        let sorted = [...receiptHistory];
+        if (currentSort === 'date') sorted.sort((a,b) => b.timestamp - a.timestamp);
+        else if (currentSort === 'name') sorted.sort((a,b) => a.storeName.localeCompare(b.storeName));
+        else if (currentSort === 'total') sorted.sort((a,b) => b.total - a.total);
+        
+        if (sorted.length === 0) {
+            container.innerHTML = '<div class="empty-history">No saved receipts. Create and save!</div>';
+            return;
+        }
+        
+        container.innerHTML = sorted.map(entry => `
+            <div class="history-item" data-id="${entry.id}">
+                <div class="history-info">
+                    <div class="history-store">🏪 ${escapeHtml(entry.storeName)}</div>
+                    <div class="history-date">📅 ${escapeHtml(entry.date)} | 👤 ${escapeHtml(entry.customerName)}</div>
+                    <div class="history-total">💰 Total: $${entry.total.toFixed(2)}</div>
+                </div>
+                <div class="history-actions">
+                    <button class="load-history-btn" data-id="${entry.id}">📋 Load</button>
+                    <button class="delete-history-btn" data-id="${entry.id}">🗑️ Delete</button>
+                </div>
+            </div>
+        `).join('');
+        
+        // Attach events
+        document.querySelectorAll('.load-history-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                loadHistoryEntry(id);
+            });
+        });
+        document.querySelectorAll('.delete-history-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                deleteHistoryEntry(id);
+            });
+        });
+    }
+    
+    function loadHistoryEntry(id) {
+        const entry = receiptHistory.find(e => e.id === id);
+        if (!entry) return;
+        const data = entry.fullData;
+        document.getElementById('storeName').value = data.storeName;
+        document.getElementById('storeContact').value = data.storeContact;
+        document.getElementById('receiptTitle').value = data.receiptTitle;
+        document.getElementById('customerName').value = data.customerName;
+        document.getElementById('receiptDate').value = data.dateVal;
+        document.getElementById('extraNote').value = data.extraNote;
+        itemsArray = data.items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }));
+        renderItemRows();
+        updateReceiptDisplay();
+        showToast(`Loaded: ${data.storeName}`, 1500);
+    }
+    
+    function deleteHistoryEntry(id) {
+        receiptHistory = receiptHistory.filter(e => e.id !== id);
+        saveHistoryToStorage();
+        renderHistoryList();
+        showToast("Deleted from history", 1000);
+    }
+    
+    function clearAllHistory() {
+        if (confirm("Delete ALL saved receipts?")) {
+            receiptHistory = [];
+            saveHistoryToStorage();
+            renderHistoryList();
+            showToast("All history cleared", 1200);
+        }
+    }
+    
+    // Sorting handlers
+    function setupSorting() {
+        const sortBtns = document.querySelectorAll('.sort-btn');
+        sortBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sortBy = btn.getAttribute('data-sort');
+                currentSort = sortBy;
+                renderHistoryList();
+                sortBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        document.getElementById('clearAllHistoryBtn')?.addEventListener('click', clearAllHistory);
+    }
+
+    function init() {
+        setDefaultDate();
+        renderItemRows();
+        updateReceiptDisplay();
+        loadHistoryFromStorage();
+        setupSorting();
+        
+        document.getElementById('updateReceiptBtn')?.addEventListener('click', () => {
+            syncItemsFromDOM();
+            renderItemRows();
+            updateReceiptDisplay();
+            showToast("Receipt refreshed", 900);
+        });
+        document.getElementById('printReceiptBtn')?.addEventListener('click', printReceipt);
+        document.getElementById('savePdfBtn')?.addEventListener('click', downloadReceiptAsPDF);
+        document.getElementById('saveToHistoryBtn')?.addEventListener('click', saveToHistory);
+        document.getElementById('addItemBtn')?.addEventListener('click', () => {
+            itemsArray.push({ name: "New Item", quantity: 1, price: 0.00 });
+            renderItemRows();
+            updateReceiptDisplay();
+            showToast("Item added", 900);
+        });
+        ['storeName', 'storeContact', 'receiptTitle', 'customerName', 'receiptDate', 'extraNote'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', () => updateReceiptDisplay());
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>
