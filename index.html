@@ -28,7 +28,6 @@
             gap: 20px;
         }
 
-        /* Main layout for desktop/tablet */
         .main-grid {
             display: flex;
             flex-wrap: wrap;
@@ -193,18 +192,88 @@
 
         .receipt-paper {
             width: 100%;
-            max-width: 210mm; /* A4/A3 compatible preview */
+            max-width: 210mm;
             background: white;
             box-shadow: 0 6px 18px rgba(0,0,0,0.1);
             border-radius: 16px;
-            padding: 18px 14px;
-            font-family: 'Courier New', monospace;
-            font-size: 11pt;
+            padding: 14px 12px;
+            font-family: 'Courier New', 'SF Mono', monospace;
+            font-size: 11px;
             color: #1e2a36;
             margin: 0 auto;
         }
 
-        /* History panel styles */
+        /* Improved Receipt Styles with Dotted Lines */
+        .receipt-paper .receipt-header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #aaa;
+        }
+
+        .receipt-paper .receipt-title {
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .receipt-paper .store-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .receipt-paper .receipt-details {
+            margin: 10px 0;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        .receipt-paper .receipt-details div {
+            margin-bottom: 3px;
+        }
+
+        .receipt-paper .receipt-items {
+            width: 100%;
+            margin: 10px 0;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+
+        .receipt-paper .receipt-items th,
+        .receipt-paper .receipt-items td {
+            text-align: left;
+            padding: 6px 2px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .receipt-paper .receipt-items th {
+            border-bottom: 2px dotted #999;
+            font-weight: bold;
+            font-size: 9px;
+        }
+
+        .receipt-paper .total-row {
+            margin-top: 12px;
+            text-align: right;
+            border-top: 2px dashed #333;
+            padding-top: 8px;
+            font-size: 10px;
+        }
+
+        .receipt-paper .total-row div {
+            margin-bottom: 3px;
+        }
+
+        .receipt-paper .footer-note {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 8px;
+            border-top: 1px dashed #bbb;
+            padding-top: 8px;
+            color: #666;
+        }
+
         .history-toolbar {
             display: flex;
             gap: 12px;
@@ -307,7 +376,6 @@
             padding: 30px;
         }
 
-        /* Print styles - A3 default */
         @media print {
             body * {
                 visibility: hidden;
@@ -322,6 +390,9 @@
                 width: 100%;
                 padding: 10mm;
                 margin: 0;
+                box-shadow: none;
+            }
+            .receipt-paper {
                 box-shadow: none;
             }
         }
@@ -348,16 +419,32 @@
             .toast-msg { white-space: normal; max-width: 85vw; }
             .history-item { flex-direction: column; align-items: stretch; }
             .history-actions { justify-content: flex-end; }
+            .receipt-paper {
+                padding: 10px 8px;
+            }
         }
 
         .print-container { display: none; }
         .paper-size-select { max-width: 150px; }
+        
+        /* Android/iOS optimizations */
+        @media (max-width: 480px) {
+            .receipt-paper {
+                font-size: 10px;
+            }
+            .receipt-paper .receipt-title {
+                font-size: 16px;
+            }
+            .receipt-paper .receipt-items th,
+            .receipt-paper .receipt-items td {
+                padding: 4px 2px;
+            }
+        }
     </style>
 </head>
 <body>
 <div class="app-container">
     <div class="main-grid">
-        <!-- Left: Input Form -->
         <div class="input-card">
             <h2>📄 Receipt Builder</h2>
             <div class="form-group">
@@ -411,7 +498,6 @@
             </div>
         </div>
 
-        <!-- Right: Receipt Preview -->
         <div class="preview-card">
             <h3>🧾 Receipt Preview</h3>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
@@ -419,7 +505,6 @@
         </div>
     </div>
 
-    <!-- History Section -->
     <div class="history-card">
         <h2>📜 Receipt History</h2>
         <div class="history-toolbar">
@@ -434,21 +519,18 @@
     </div>
 </div>
 
-<!-- Hidden print container -->
 <div id="printableReceipt" style="display: none;"></div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // Data
     let itemsArray = [
         { name: "Organic Apples", quantity: 2, price: 1.99 },
         { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }
     ];
     
     let receiptHistory = [];
-    let currentSort = "date"; // date, name, total
+    let currentSort = "date";
 
-    // Load history from localStorage
     function loadHistoryFromStorage() {
         const stored = localStorage.getItem("receiptHistory");
         if (stored) {
@@ -578,7 +660,7 @@
             <div class="receipt-header">
                 <div class="receipt-title">${escapeHtml(storeName.toUpperCase())}</div>
                 <div class="store-name">${escapeHtml(receiptTitle)}</div>
-                <div style="font-size:0.75rem;">${escapeHtml(storeContact)}</div>
+                <div style="font-size:8px;">${escapeHtml(storeContact)}</div>
             </div>
             <div class="receipt-details">
                 <div><strong>Date:</strong> ${escapeHtml(dateVal)}</div>
@@ -626,23 +708,12 @@
         if (newItems.length) itemsArray = newItems;
     }
 
-    // PRINT with selected paper size (A3 by default)
     function printReceipt() {
         syncItemsFromDOM();
         updateReceiptDisplay();
         const receiptData = getCurrentReceiptData();
         const receiptHTML = generateReceiptHTMLFromData(receiptData);
         const paperSize = document.getElementById('paperSize').value;
-        
-        // Map paper size to CSS @page size
-        let pageSizeCSS = '';
-        switch(paperSize) {
-            case 'A3': pageSizeCSS = 'A3 landscape? No, portrait A3'; break;
-            case 'A4': pageSizeCSS = 'A4'; break;
-            case 'A5': pageSizeCSS = 'A5'; break;
-            case 'Letter': pageSizeCSS = 'letter'; break;
-            default: pageSizeCSS = 'A3';
-        }
         
         const printDiv = document.getElementById('printableReceipt');
         printDiv.style.display = 'block';
@@ -704,7 +775,6 @@
         }
     }
 
-    // Save current receipt to history
     function saveToHistory() {
         syncItemsFromDOM();
         const data = getCurrentReceiptData();
@@ -752,7 +822,6 @@
             </div>
         `).join('');
         
-        // Attach events
         document.querySelectorAll('.load-history-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = parseInt(btn.getAttribute('data-id'));
@@ -799,7 +868,6 @@
         }
     }
     
-    // Sorting handlers
     function setupSorting() {
         const sortBtns = document.querySelectorAll('.sort-btn');
         sortBtns.forEach(btn => {
