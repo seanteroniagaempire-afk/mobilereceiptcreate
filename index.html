@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | A3 Print + History | Mobile Ready</title>
+    <title>Pro Receipt | A3 PDF + History | Mobile Ready</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -169,7 +169,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-primary, .btn-secondary, .btn-print, .btn-save-history {
+        .btn-primary, .btn-secondary, .btn-save-history {
             border: none;
             padding: 12px 16px;
             border-radius: 60px;
@@ -187,7 +187,6 @@
 
         .btn-primary { background: #2c7da0; color: white; }
         .btn-secondary { background: #4b6e8a; color: white; }
-        .btn-print { background: #5f7f6b; color: white; }
         .btn-save-history { background: #e6a017; color: white; }
 
         .receipt-paper {
@@ -203,7 +202,6 @@
             margin: 0 auto;
         }
 
-        /* Improved Receipt Styles with Dotted Lines */
         .receipt-paper .receipt-header {
             text-align: center;
             margin-bottom: 12px;
@@ -376,27 +374,7 @@
             padding: 30px;
         }
 
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #printableReceipt, #printableReceipt * {
-                visibility: visible;
-            }
-            #printableReceipt {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 10mm;
-                margin: 0;
-                box-shadow: none;
-            }
-            .receipt-paper {
-                box-shadow: none;
-            }
-        }
-
+        /* Keep PDF generation clean - no print styles interference */
         .toast-msg {
             position: fixed;
             bottom: 25px;
@@ -423,11 +401,7 @@
                 padding: 10px 8px;
             }
         }
-
-        .print-container { display: none; }
-        .paper-size-select { max-width: 150px; }
         
-        /* Android/iOS optimizations */
         @media (max-width: 480px) {
             .receipt-paper {
                 font-size: 10px;
@@ -439,6 +413,14 @@
             .receipt-paper .receipt-items td {
                 padding: 4px 2px;
             }
+        }
+        
+        /* Paper size hint text */
+        .paper-hint {
+            font-size: 0.7rem;
+            color: #5b7a95;
+            margin-top: 8px;
+            text-align: center;
         }
     </style>
 </head>
@@ -468,11 +450,11 @@
                 <input type="date" id="receiptDate">
             </div>
             <div class="form-group">
-                <label>📄 Print Paper Size (Default A3)</label>
+                <label>📄 PDF Paper Size (A3/A4/A5/Letter)</label>
                 <select id="paperSize" class="paper-size-select">
-                    <option value="A3">A3 (297x420mm) - Default</option>
-                    <option value="A4">A4 (210x297mm)</option>
-                    <option value="A5">A5 (148x210mm)</option>
+                    <option value="A3">A3 (297x420mm) - Large</option>
+                    <option value="A4">A4 (210x297mm) - Standard</option>
+                    <option value="A5">A5 (148x210mm) - Compact</option>
                     <option value="Letter">Letter (8.5x11in)</option>
                 </select>
             </div>
@@ -492,7 +474,6 @@
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh</button>
-                <button class="btn-print" id="printReceiptBtn">🖨️ Print (A3 preset)</button>
                 <button class="btn-secondary" id="savePdfBtn">📥 Save PDF</button>
                 <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
             </div>
@@ -501,7 +482,7 @@
         <div class="preview-card">
             <h3>🧾 Receipt Preview</h3>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
-            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Print dialog defaults to A3, you can change in printer settings</p>
+            <p class="paper-hint">* PDF will match selected paper size (A3/A4/A5/Letter)</p>
         </div>
     </div>
 
@@ -519,7 +500,6 @@
     </div>
 </div>
 
-<div id="printableReceipt" style="display: none;"></div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
@@ -708,46 +688,15 @@
         if (newItems.length) itemsArray = newItems;
     }
 
-    function printReceipt() {
-        syncItemsFromDOM();
-        updateReceiptDisplay();
-        const receiptData = getCurrentReceiptData();
-        const receiptHTML = generateReceiptHTMLFromData(receiptData);
-        const paperSize = document.getElementById('paperSize').value;
-        
-        const printDiv = document.getElementById('printableReceipt');
-        printDiv.style.display = 'block';
-        printDiv.innerHTML = `
-            <div style="width:100%; margin:0 auto; padding:10mm; font-family:'Courier New', monospace; font-size:11pt;">
-                ${receiptHTML}
-            </div>
-            <style>
-                .receipt-header { text-align:center; margin-bottom:1rem; border-bottom:2px dashed #aaa; padding-bottom:0.7rem; }
-                .receipt-title { font-size:1.6rem; font-weight:bold; }
-                .store-name { font-size:1.1rem; font-weight:600; }
-                .receipt-details { margin:1rem 0; font-size:0.9rem; }
-                .receipt-items { width:100%; margin:1rem 0; border-collapse:collapse; }
-                .receipt-items th, .receipt-items td { text-align:left; padding:6px 2px; border-bottom:1px dotted #ccc; }
-                .total-row { margin-top:1rem; text-align:right; font-weight:bold; border-top:2px solid #333; padding-top:0.5rem; }
-                .footer-note { margin-top:1.5rem; text-align:center; font-size:0.7rem; border-top:1px dashed #bbb; padding-top:0.6rem; }
-                @page { size: ${paperSize} portrait; margin: 8mm; }
-                @media print { body { margin:0; } }
-            </style>
-        `;
-        
-        window.print();
-        setTimeout(() => {
-            printDiv.style.display = 'none';
-            printDiv.innerHTML = '';
-        }, 1000);
-        showToast(`Print dialog opened (${paperSize} preset)`, 1800);
-    }
-
+    // PDF download ONLY (no print features)
     async function downloadReceiptAsPDF() {
         syncItemsFromDOM();
         updateReceiptDisplay();
+        
+        // Get the preview element which contains current receipt
         const element = document.getElementById('receiptPreviewContainer');
         if (!element) return;
+        
         const paperSize = document.getElementById('paperSize').value;
         let pdfFormat = 'a4';
         if (paperSize === 'A3') pdfFormat = 'a3';
@@ -755,29 +704,54 @@
         else if (paperSize === 'A5') pdfFormat = 'a5';
         else if (paperSize === 'Letter') pdfFormat = 'letter';
         
+        // Temporarily store original styles to ensure PDF captures proper layout
         const originalWidth = element.style.width;
-        element.style.width = paperSize === 'A3' ? '297mm' : (paperSize === 'A4' ? '210mm' : '148mm');
+        const originalMaxWidth = element.style.maxWidth;
+        const originalBoxShadow = element.style.boxShadow;
+        
+        // Enhance PDF appearance: ensure consistent width for the chosen paper
+        if (paperSize === 'A3') {
+            element.style.width = '270mm';
+            element.style.maxWidth = '270mm';
+        } else if (paperSize === 'A4') {
+            element.style.width = '190mm';
+            element.style.maxWidth = '190mm';
+        } else if (paperSize === 'A5') {
+            element.style.width = '130mm';
+            element.style.maxWidth = '130mm';
+        } else if (paperSize === 'Letter') {
+            element.style.width = '200mm';
+            element.style.maxWidth = '200mm';
+        }
+        element.style.boxShadow = 'none';
         
         const opt = {
-            margin: [5, 5, 5, 5],
+            margin: [8, 8, 8, 8],
             filename: `receipt_${Date.now()}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, letterRendering: true },
+            html2canvas: { scale: 2.5, letterRendering: true, useCORS: false },
             jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' }
         };
+        
         try {
+            // Use html2pdf bundle directly
             await html2pdf().set(opt).from(element).save();
-            showToast(`PDF saved (${paperSize})`, 2000);
+            showToast(`✅ PDF saved (${paperSize})`, 2200);
         } catch (err) {
-            alert("PDF error");
+            console.error("PDF Error:", err);
+            showToast("❌ PDF generation failed", 2000);
         } finally {
+            // Restore original styles
             element.style.width = originalWidth;
+            element.style.maxWidth = originalMaxWidth || '';
+            element.style.boxShadow = originalBoxShadow;
         }
     }
 
     function saveToHistory() {
         syncItemsFromDOM();
         const data = getCurrentReceiptData();
+        // Ensure items have proper structure
         const historyEntry = {
             id: Date.now(),
             storeName: data.storeName,
@@ -789,9 +763,11 @@
             receiptHTML: generateReceiptHTMLFromData(data)
         };
         receiptHistory.unshift(historyEntry);
+        // Limit history to 50 items to keep performance
+        if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0, 50);
         saveHistoryToStorage();
         renderHistoryList();
-        showToast("Receipt saved to history!", 1500);
+        showToast("💾 Receipt saved to history!", 1500);
     }
 
     function renderHistoryList() {
@@ -804,7 +780,7 @@
         else if (currentSort === 'total') sorted.sort((a,b) => b.total - a.total);
         
         if (sorted.length === 0) {
-            container.innerHTML = '<div class="empty-history">No saved receipts. Create and save!</div>';
+            container.innerHTML = '<div class="empty-history">✨ No saved receipts. Create and save!</div>';
             return;
         }
         
@@ -849,18 +825,18 @@
         itemsArray = data.items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }));
         renderItemRows();
         updateReceiptDisplay();
-        showToast(`Loaded: ${data.storeName}`, 1500);
+        showToast(`📋 Loaded: ${data.storeName}`, 1500);
     }
     
     function deleteHistoryEntry(id) {
         receiptHistory = receiptHistory.filter(e => e.id !== id);
         saveHistoryToStorage();
         renderHistoryList();
-        showToast("Deleted from history", 1000);
+        showToast("🗑️ Deleted from history", 1000);
     }
     
     function clearAllHistory() {
-        if (confirm("Delete ALL saved receipts?")) {
+        if (confirm("⚠️ Delete ALL saved receipts permanently?")) {
             receiptHistory = [];
             saveHistoryToStorage();
             renderHistoryList();
@@ -880,6 +856,9 @@
             });
         });
         document.getElementById('clearAllHistoryBtn')?.addEventListener('click', clearAllHistory);
+        // Default active sort by date
+        const defaultSortBtn = document.querySelector('.sort-btn[data-sort="date"]');
+        if (defaultSortBtn) defaultSortBtn.classList.add('active');
     }
 
     function init() {
@@ -889,24 +868,37 @@
         loadHistoryFromStorage();
         setupSorting();
         
+        // Refresh button: sync items, re-render, update preview
         document.getElementById('updateReceiptBtn')?.addEventListener('click', () => {
             syncItemsFromDOM();
-            renderItemRows();
+            renderItemRows();  // ensures DOM items match array
             updateReceiptDisplay();
-            showToast("Receipt refreshed", 900);
+            showToast("🔄 Receipt refreshed", 900);
         });
-        document.getElementById('printReceiptBtn')?.addEventListener('click', printReceipt);
+        
+        // PDF save only
         document.getElementById('savePdfBtn')?.addEventListener('click', downloadReceiptAsPDF);
+        
+        // Save to history
         document.getElementById('saveToHistoryBtn')?.addEventListener('click', saveToHistory);
+        
+        // Add new item
         document.getElementById('addItemBtn')?.addEventListener('click', () => {
             itemsArray.push({ name: "New Item", quantity: 1, price: 0.00 });
             renderItemRows();
             updateReceiptDisplay();
-            showToast("Item added", 900);
+            showToast("➕ Item added", 900);
         });
+        
+        // Live preview updates for all text inputs
         ['storeName', 'storeContact', 'receiptTitle', 'customerName', 'receiptDate', 'extraNote'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', () => updateReceiptDisplay());
+        });
+        // Also listen to paper size changes (visual preview unaffected, but user sees same receipt)
+        document.getElementById('paperSize')?.addEventListener('change', () => {
+            // Just a subtle hint, no functional change in preview
+            showToast(`PDF paper size set to ${document.getElementById('paperSize').value}`, 1000);
         });
     }
     
