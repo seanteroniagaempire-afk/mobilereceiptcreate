@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Navigator Hub | Sheets + Calculator + More</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 90vh;
+        }
+        
+        header {
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a5b1c2;
+            margin-bottom: 10px;
+        }
+        
+        .media-horizontal {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .media-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 170px;
+        }
+        
+        .media-card:hover {
+            transform: translateY(-6px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .media-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+            font-size: 2.2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s;
+        }
+        
+        .media-card:hover .media-icon {
+            transform: scale(1.05);
+        }
+        
+        .sheets-icon {
+            background: linear-gradient(135deg, #0F9D58, #1E8E3E);
+        }
+        
+        .youtube-icon {
+            background: linear-gradient(135deg, #FF0000, #CC0000);
+        }
+        
+        .google-icon {
+            background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335);
+        }
+        
+        .calculator-icon {
+            background: linear-gradient(135deg, #6c5ce7, #4834d4);
+        }
+        
+        .media-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        
+        .media-desc {
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        footer {
+            margin-top: 40px;
+            color: #a5b1c2;
+            font-size: 0.9rem;
+            padding: 20px 0 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .salutation {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #cbd5e6;
+        }
+        
+        @media (max-width: 680px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .media-horizontal {
+                gap: 18px;
+            }
+            
+            .media-card {
+                width: 150px;
+                padding: 18px 12px;
+            }
+            
+            .media-icon {
+                width: 55px;
+                height: 55px;
+                font-size: 1.8rem;
+            }
+            
+            .media-title {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 540px) {
+            .media-horizontal {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+            
+            .media-card {
+                width: 75%;
+                max-width: 260px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 20px;
+                padding: 16px 20px;
+            }
+            
+            .media-icon {
+                margin-bottom: 0;
+                width: 60px;
+                height: 60px;
+            }
+            
+            .media-info {
+                text-align: left;
+            }
+            
+            .media-title {
+                margin-bottom: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <header>
+                <h1>🚀 Navigator Hub</h1>
+                <p class="subtitle">Your essential workspace: Sheets, YouTube, Search & Calculator</p>
+            </header>
+            
+            <div class="media-horizontal">
+                <!-- Google Sheets Card (replaces Al-Quran) -->
+                <div class="media-card" id="googlesheets">
+                    <div class="media-icon sheets-icon">
+                        📊
+                    </div>
+                    <div class="media-info">
+                        <h3 class="media-title">Google Sheets</h3>
+                        <p class="media-desc">Create & manage spreadsheets online</p>
+                    </div>
+                </div>
+                
+                <!-- YouTube Card -->
+                <div class="media-card" id="youtube">
+                    <div class="media-icon youtube-icon">
+                        ▶️
+                    </div>
+                    <div class="media-info">
+                        <h3 class="media-title">YouTube</h3>
+                        <p class="media-desc">Watch videos & discover content</p>
+                    </div>
+                </div>
+                
+                <!-- Google Search Card -->
+                <div class="media-card" id="google">
+                    <div class="media-icon google-icon">
+                        🔍
+                    </div>
+                    <div class="media-info">
+                        <h3 class="media-title">Google</h3>
+                        <p class="media-desc">Fast & accurate web search</p>
+                    </div>
+                </div>
+                
+                <!-- NEW: Calculator Navigator -->
+                <div class="media-card" id="calculator">
+                    <div class="media-icon calculator-icon">
+                        🧮
+                    </div>
+                    <div class="media-info">
+                        <h3 class="media-title">Calculator</h3>
+                        <p class="media-desc">Scientific & basic calculator</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="salutation">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ</div>
+            <p>O Allah, send blessings upon Muhammad and upon the family of Muhammad</p>
+            <p style="font-size: 0.75rem; margin-top: 12px;">⚡ Quick access to essential tools</p>
+        </footer>
+    </div>
+
+    <script>
+        // Platform URLs - updated: Google Sheets replaces Quran, plus Calculator (opens a modern web calculator)
+        const platforms = {
+            googlesheets: 'https://sheets.google.com/',
+            youtube: 'https://www.youtube.com/',
+            google: 'https://www.google.com/',
+            calculator: 'https://www.calculator.net/'   // reliable online calculator with scientific mode
+        };
+        
+        // Alternative: if you prefer a simpler dedicated calculator, we use calculator.net (full featured)
+        // Add click event listeners to all cards
+        document.getElementById('googlesheets').addEventListener('click', function(e) {
+            window.location.href = platforms.googlesheets;
+        });
+        
+        document.getElementById('youtube').addEventListener('click', function(e) {
+            window.location.href = platforms.youtube;
+        });
+        
+        document.getElementById('google').addEventListener('click', function(e) {
+            window.location.href = platforms.google;
+        });
+        
+        document.getElementById('calculator').addEventListener('click', function(e) {
+            window.location.href = platforms.calculator;
+        });
+        
+        // Optional: Add ripple/tap effect for better mobile feedback
+        const cards = document.querySelectorAll('.media-card');
+        cards.forEach(card => {
+            card.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+            card.addEventListener('mousedown', function() {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+</html>
