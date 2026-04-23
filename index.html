@@ -1,13 +1,13 @@
-This is a complete HTML document that creates a mobile-friendly receipt generator with multi-page support, saved presets, and PDF download functionality.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | Smart Saved Info + PDF with Path | Multi-Page</title>
+    <title>Pro Receipt | Android Download Manager PDF Support</title>
     <!-- html2pdf bundle for reliable PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- jspdf for better android compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -435,7 +435,6 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
         .load-history-btn, .delete-history-btn { background: #2c7da0; border: none; color: white; padding: 6px 12px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
         .delete-history-btn { background: #e07c6c; }
 
-        /* Enhanced Toast with file path */
         .toast-msg {
             position: fixed;
             bottom: 25px;
@@ -500,11 +499,11 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
-                <button class="btn-secondary" id="savePdfBtn">📥 Download PDF File</button>
+                <button class="btn-secondary" id="savePdfBtn">📥 Download PDF (Android Ready)</button>
                 <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
             </div>
             <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
-                📁 <strong>PDF Download</strong> → Saves real .pdf file to your device (Android Download Manager / OS default folder)<br>
+                📁 <strong>PDF Download</strong> → Generates PDF and triggers Android Download Manager automatically<br>
                 💾 <strong>History</strong> → Stores data locally inside app (reloadable, not PDF)
             </div>
         </div>
@@ -529,7 +528,7 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- SAVED INFO STORAGE ----------
+    // SAVED INFO STORAGE
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
         contact: JSON.parse(localStorage.getItem("saved_contacts") || '["+1 234 567 890", "+44 20 7946 0123", "support@store.com"]'),
@@ -538,9 +537,25 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
         note: JSON.parse(localStorage.getItem("saved_footer_notes") || '["Thank you for shopping!", "Come again!", "Have a great day"]'),
         itemPresets: JSON.parse(localStorage.getItem("saved_item_presets") || '["Organic Apples - 1.99", "Whole Milk - 3.49", "Sourdough Bread - 4.50", "Free Range Eggs - 5.99"]')
     };
-    function persistSavedData() { Object.keys(savedData).forEach(k => localStorage.setItem(`saved_${k === 'store' ? 'store_names' : k === 'contact' ? 'contacts' : k === 'title' ? 'receipt_titles' : k === 'customer' ? 'customer_names' : k === 'note' ? 'footer_notes' : 'item_presets'}`, JSON.stringify(savedData[k]))); }
+    function persistSavedData() { 
+        localStorage.setItem("saved_store_names", JSON.stringify(savedData.store));
+        localStorage.setItem("saved_contacts", JSON.stringify(savedData.contact));
+        localStorage.setItem("saved_receipt_titles", JSON.stringify(savedData.title));
+        localStorage.setItem("saved_customer_names", JSON.stringify(savedData.customer));
+        localStorage.setItem("saved_footer_notes", JSON.stringify(savedData.note));
+        localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
+    }
 
-    function showToast(message, type = 'info', duration = 3500) { const toast = document.getElementById('toastMsg'); toast.textContent = message; toast.className = `toast-msg ${type}`; toast.style.opacity = '1'; setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.className = 'toast-msg', 300); }, duration); }
+    function showToast(message, type = 'info', duration = 3500) { 
+        const toast = document.getElementById('toastMsg'); 
+        toast.textContent = message; 
+        toast.className = `toast-msg ${type}`; 
+        toast.style.opacity = '1'; 
+        setTimeout(() => { 
+            toast.style.opacity = '0'; 
+            setTimeout(() => toast.className = 'toast-msg', 300); 
+        }, duration); 
+    }
 
     let activePopupField = null, activeItemRowIndex = null;
     function closePopup() { const overlay = document.querySelector('.popup-overlay'); if (overlay) overlay.remove(); activePopupField = null; activeItemRowIndex = null; }
@@ -563,7 +578,7 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
     }
     function applyItemPresetToRow(rowIndex, preset) { let name = preset; let price = 0; const lastDash = preset.lastIndexOf('-'); if (lastDash !== -1) { name = preset.substring(0, lastDash).trim(); const pricePart = preset.substring(lastDash + 1).trim(); const parsed = parseFloat(pricePart); if (!isNaN(parsed)) price = parsed; } if (itemsArray[rowIndex]) { itemsArray[rowIndex].name = name; itemsArray[rowIndex].price = price; if (!itemsArray[rowIndex].quantity || itemsArray[rowIndex].quantity < 1) itemsArray[rowIndex].quantity = 1; renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📋 Preset: ${name} ($${price})`, 'success', 1500); } }
 
-    // ---------- MULTI-PAGE ----------
+    // MULTI-PAGE
     let pages = [], activePageId = null, itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }];
     function saveCurrentPageData() { if (!activePageId) return; const page = pages.find(p => p.id === activePageId); if (page) { page.formData = { storeName: document.getElementById('storeName').value, storeContact: document.getElementById('storeContact').value, receiptTitle: document.getElementById('receiptTitle').value, customerName: document.getElementById('customerName').value, dateVal: document.getElementById('receiptDate').value, extraNote: document.getElementById('extraNote').value, paperSize: document.getElementById('paperSize').value }; page.itemsArray = JSON.parse(JSON.stringify(itemsArray)); } }
     function loadPageToUI(page) { if (!page) return; document.getElementById('storeName').value = page.formData.storeName || ""; document.getElementById('storeContact').value = page.formData.storeContact || ""; document.getElementById('receiptTitle').value = page.formData.receiptTitle || ""; document.getElementById('customerName').value = page.formData.customerName || ""; document.getElementById('receiptDate').value = page.formData.dateVal || new Date().toISOString().split('T')[0]; document.getElementById('extraNote').value = page.formData.extraNote || ""; document.getElementById('paperSize').value = page.formData.paperSize || "A4"; itemsArray = page.itemsArray.map(i => ({...i})); renderItemRows(); updateReceiptDisplay(); }
@@ -572,10 +587,10 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
     function renderItemRows() { const container = document.getElementById('itemsContainer'); if (!container) return; container.innerHTML = ''; itemsArray.forEach((item, idx) => { const row = document.createElement('div'); row.className = 'item-row'; row.innerHTML = `<input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item"><input type="number" class="item-qty" value="${item.quantity}" step="1" min="1"><input type="number" class="item-price" value="${item.price}" step="0.01" min="0"><button class="saved-icon-btn item-saved-btn" data-item-idx="${idx}" title="Saved item presets">📋</button><button class="remove-item" data-idx="${idx}">✕</button>`; container.appendChild(row); }); document.querySelectorAll('.remove-item').forEach(btn => { btn.addEventListener('click', (e) => { const idx = parseInt(btn.getAttribute('data-idx')); if (!isNaN(idx)) { itemsArray.splice(idx, 1); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item removed", 'info', 800); } }); }); document.querySelectorAll('.item-saved-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-item-idx')); if (!isNaN(idx)) showPopupForField('itemPreset', idx); }); }); attachItemEvents(); }
     function attachItemEvents() { document.querySelectorAll('.item-row').forEach((row, idx) => { const update = () => { if (itemsArray[idx]) { itemsArray[idx].name = row.querySelector('.item-name')?.value || ""; itemsArray[idx].quantity = parseFloat(row.querySelector('.item-qty')?.value) || 1; itemsArray[idx].price = parseFloat(row.querySelector('.item-price')?.value) || 0; updateReceiptDisplay(); saveCurrentPageData(); } }; row.querySelector('.item-name')?.addEventListener('input', update); row.querySelector('.item-qty')?.addEventListener('input', update); row.querySelector('.item-price')?.addEventListener('input', update); }); }
     function getCurrentReceiptData() { const storeName = document.getElementById('storeName').value || "Store"; const storeContact = document.getElementById('storeContact').value || ""; const receiptTitle = document.getElementById('receiptTitle').value || "RECEIPT"; const customerName = document.getElementById('customerName').value || "Guest"; const dateVal = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0]; const extraNote = document.getElementById('extraNote').value || ""; let subtotal = 0; const itemsCopy = itemsArray.map(item => { const qty = parseFloat(item.quantity) || 0; const price = parseFloat(item.price) || 0; subtotal += qty * price; return { ...item, quantity: qty, price, total: qty * price }; }); return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() }; }
-    function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
+    function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `<tr><td style="padding:4px 2px;">${escapeHtml(i.name)}</td><td style="text-align:center;padding:4px 2px;">${i.quantity}</td><td style="text-align:right;padding:4px 2px;">$${i.price.toFixed(2)}</td><td style="text-align:right;padding:4px 2px;">$${(i.quantity*i.price).toFixed(2)}</td>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items" style="width:100%;border-collapse:collapse;"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
     function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
 
-    // ENHANCED PDF DOWNLOAD with Android/Desktop Download folder info
+    // FIXED PDF DOWNLOAD - TRIGGERS ANDROID DOWNLOAD MANAGER
     async function downloadReceiptAsPDF() {
         const element = document.getElementById('receiptPreviewContainer');
         const paperSize = document.getElementById('paperSize').value;
@@ -584,19 +599,54 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
         const storeNameRaw = document.getElementById('storeName').value || "receipt";
         const cleanStore = storeNameRaw.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
         const fileName = `receipt_${cleanStore}_${timestamp}.pdf`;
-        const origWidth = element.style.width;
-        element.style.width = paperSize === 'A3' ? '270mm' : paperSize === 'A4' ? '190mm' : paperSize === 'A5' ? '130mm' : '200mm';
+        
+        showToast("📄 Generating PDF, please wait...", 'info', 2000);
+        
+        const opt = { 
+            margin: [8, 8, 8, 8], 
+            filename: fileName, 
+            html2canvas: { scale: 2.5, logging: false, useCORS: true }, 
+            jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } 
+        };
+        
         try {
-            const opt = { margin: [8,8,8,8], filename: fileName, html2canvas: { scale: 2.5, logging: false, useCORS: true }, jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } };
-            await html2pdf().set(opt).from(element).save();
-            // Provide explicit download path hint (works on Android & desktop)
-            let osHint = "Downloads folder";
-            if (/android/i.test(navigator.userAgent)) osHint = "📱 Android → 'Downloads' folder (visible in Files app)";
-            else if (/iPhone|iPad|Mac/i.test(navigator.userAgent)) osHint = "🍏 iOS/macOS → Downloads folder";
-            else osHint = "💻 Desktop → Default Downloads directory";
-            showToast(`✅ PDF Saved!\n📄 ${fileName}\n📂 ${osHint}`, 'success', 5000);
-        } catch (err) { console.error(err); showToast(`❌ PDF failed: ${err.message}`, 'warning', 3000); } 
-        finally { element.style.width = origWidth; }
+            // Use html2pdf to generate blob and trigger download
+            const worker = html2pdf().set(opt).from(element);
+            
+            // Get the PDF as blob
+            const pdfBlob = await worker.outputPdf('blob');
+            
+            // Create download link that works with Android Download Manager
+            const downloadUrl = URL.createObjectURL(pdfBlob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = downloadUrl;
+            downloadLink.download = fileName;
+            downloadLink.style.display = 'none';
+            
+            // Android Chrome requires this approach
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(downloadLink);
+                URL.revokeObjectURL(downloadUrl);
+            }, 100);
+            
+            // Determine device type for message
+            let deviceMsg = "";
+            if (/android/i.test(navigator.userAgent)) {
+                deviceMsg = "📱 Android: Check your Downloads folder (use Chrome or system download manager)";
+            } else {
+                deviceMsg = "💻 PDF download started! Check your Downloads folder.";
+            }
+            
+            showToast(`✅ PDF Downloaded!\n📄 ${fileName}\n${deviceMsg}`, 'success', 6000);
+            
+        } catch (err) {
+            console.error("PDF Error:", err);
+            showToast(`❌ PDF generation failed: ${err.message}`, 'warning', 3000);
+        }
     }
 
     // History (in-app)
@@ -630,4 +680,3 @@ This is a complete HTML document that creates a mobile-friendly receipt generato
 </script>
 </body>
 </html>
-```
