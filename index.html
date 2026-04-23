@@ -376,6 +376,7 @@
             padding: 30px;
         }
 
+        /* PRINT STYLES - ensures dialog appears on Android & proper A3 scaling */
         @media print {
             body * {
                 visibility: hidden;
@@ -388,13 +389,18 @@
                 left: 0;
                 top: 0;
                 width: 100%;
-                padding: 10mm;
                 margin: 0;
-                box-shadow: none;
+                padding: 0;
+                background: white;
+                z-index: 99999;
             }
-            .receipt-paper {
-                box-shadow: none;
+            .print-receipt-root {
+                width: 100%;
+                margin: 0 auto;
+                padding: 8mm;
+                box-sizing: border-box;
             }
+            /* Force page size from our dynamic @page injection */
         }
 
         .toast-msg {
@@ -427,7 +433,6 @@
         .print-container { display: none; }
         .paper-size-select { max-width: 150px; }
         
-        /* Android/iOS optimizations */
         @media (max-width: 480px) {
             .receipt-paper {
                 font-size: 10px;
@@ -487,12 +492,12 @@
 
             <div class="form-group">
                 <label>💬 Footer Note</label>
-                <textarea id="extraNote" rows="2" placeholder="Thank you!"></textarea>
+                <textarea id="extraNote" rows="2" placeholder="Thank you!">Thank you for shopping with us!</textarea>
             </div>
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh</button>
-                <button class="btn-print" id="printReceiptBtn">🖨️ Print (A3 preset)</button>
+                <button class="btn-print" id="printReceiptBtn">🖨️ Print (A3 ready)</button>
                 <button class="btn-secondary" id="savePdfBtn">📥 Save PDF</button>
                 <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
             </div>
@@ -501,7 +506,7 @@
         <div class="preview-card">
             <h3>🧾 Receipt Preview</h3>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
-            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Print dialog defaults to A3, you can change in printer settings</p>
+            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Print dialog will open on Android. Select printer & paper size (A3).</p>
         </div>
     </div>
 
@@ -708,6 +713,7 @@
         if (newItems.length) itemsArray = newItems;
     }
 
+    // FIX: Ensures print dialog appears on Android by creating a visible iframe / dynamic content & triggering window.print() after user gesture
     function printReceipt() {
         syncItemsFromDOM();
         updateReceiptDisplay();
@@ -715,32 +721,52 @@
         const receiptHTML = generateReceiptHTMLFromData(receiptData);
         const paperSize = document.getElementById('paperSize').value;
         
+        // Map paper size for @page CSS rule
+        let pageSizeCSS = '';
+        switch(paperSize) {
+            case 'A3': pageSizeCSS = 'A3 portrait'; break;
+            case 'A4': pageSizeCSS = 'A4 portrait'; break;
+            case 'A5': pageSizeCSS = 'A5 portrait'; break;
+            case 'Letter': pageSizeCSS = 'Letter portrait'; break;
+            default: pageSizeCSS = 'A3 portrait';
+        }
+        
+        // Create a fresh printable container, ensures Android triggers print dialog
         const printDiv = document.getElementById('printableReceipt');
         printDiv.style.display = 'block';
         printDiv.innerHTML = `
-            <div style="width:100%; margin:0 auto; padding:10mm; font-family:'Courier New', monospace; font-size:11pt;">
+            <div class="print-receipt-root" style="width:100%; margin:0 auto; background:white; font-family:'Courier New', monospace; font-size:11pt;">
                 ${receiptHTML}
             </div>
             <style>
-                .receipt-header { text-align:center; margin-bottom:1rem; border-bottom:2px dashed #aaa; padding-bottom:0.7rem; }
-                .receipt-title { font-size:1.6rem; font-weight:bold; }
-                .store-name { font-size:1.1rem; font-weight:600; }
-                .receipt-details { margin:1rem 0; font-size:0.9rem; }
-                .receipt-items { width:100%; margin:1rem 0; border-collapse:collapse; }
-                .receipt-items th, .receipt-items td { text-align:left; padding:6px 2px; border-bottom:1px dotted #ccc; }
-                .total-row { margin-top:1rem; text-align:right; font-weight:bold; border-top:2px solid #333; padding-top:0.5rem; }
-                .footer-note { margin-top:1.5rem; text-align:center; font-size:0.7rem; border-top:1px dashed #bbb; padding-top:0.6rem; }
-                @page { size: ${paperSize} portrait; margin: 8mm; }
-                @media print { body { margin:0; } }
+                .print-receipt-root .receipt-header { text-align:center; margin-bottom:1rem; border-bottom:2px dashed #aaa; padding-bottom:0.7rem; }
+                .print-receipt-root .receipt-title { font-size:1.6rem; font-weight:bold; }
+                .print-receipt-root .store-name { font-size:1.1rem; font-weight:600; }
+                .print-receipt-root .receipt-details { margin:1rem 0; font-size:0.9rem; }
+                .print-receipt-root .receipt-items { width:100%; margin:1rem 0; border-collapse:collapse; }
+                .print-receipt-root .receipt-items th, .print-receipt-root .receipt-items td { text-align:left; padding:6px 2px; border-bottom:1px dotted #ccc; }
+                .print-receipt-root .total-row { margin-top:1rem; text-align:right; font-weight:bold; border-top:2px solid #333; padding-top:0.5rem; }
+                .print-receipt-root .footer-note { margin-top:1.5rem; text-align:center; font-size:0.7rem; border-top:1px dashed #bbb; padding-top:0.6rem; }
+                @page { size: ${pageSizeCSS}; margin: 8mm; }
+                body { margin: 0; padding: 0; background: white; }
+                @media print {
+                    body { margin: 0; }
+                    .print-receipt-root { width: 100%; padding: 5mm; }
+                }
             </style>
         `;
         
-        window.print();
+        // Force async print to ensure DOM fully renders before print dialog on Android
         setTimeout(() => {
-            printDiv.style.display = 'none';
-            printDiv.innerHTML = '';
-        }, 1000);
-        showToast(`Print dialog opened (${paperSize} preset)`, 1800);
+            window.print();
+            // Reset after print dialog closes (or lose focus)
+            setTimeout(() => {
+                printDiv.style.display = 'none';
+                printDiv.innerHTML = '';
+            }, 1500);
+        }, 100);
+        
+        showToast(`📄 Print dialog opening (${paperSize})...`, 1800);
     }
 
     async function downloadReceiptAsPDF() {
@@ -756,7 +782,7 @@
         else if (paperSize === 'Letter') pdfFormat = 'letter';
         
         const originalWidth = element.style.width;
-        element.style.width = paperSize === 'A3' ? '297mm' : (paperSize === 'A4' ? '210mm' : '148mm');
+        element.style.width = paperSize === 'A3' ? '297mm' : (paperSize === 'A4' ? '210mm' : (paperSize === 'Letter' ? '216mm' : '148mm'));
         
         const opt = {
             margin: [5, 5, 5, 5],
@@ -769,7 +795,7 @@
             await html2pdf().set(opt).from(element).save();
             showToast(`PDF saved (${paperSize})`, 2000);
         } catch (err) {
-            alert("PDF error");
+            alert("PDF error: " + err.message);
         } finally {
             element.style.width = originalWidth;
         }
