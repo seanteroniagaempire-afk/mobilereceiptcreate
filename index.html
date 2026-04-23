@@ -1,11 +1,9 @@
-Here is an HTML document that implements a cleaner "saved info" system with a popup menu next to each fill bar, allowing you to save, select, and delete presets per field.
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | Smart Saved Info + Popup Menu | Multi-Page</title>
+    <title>Pro Receipt | Smart Saved Info + Items Presets | Multi-Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -30,7 +28,6 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             gap: 20px;
         }
 
-        /* PAGES SECTION */
         .pages-section {
             background: white;
             border-radius: 28px;
@@ -152,7 +149,6 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             padding-left: 14px;
         }
 
-        /* Field with saved button */
         .field-with-saved {
             display: flex;
             gap: 10px;
@@ -185,7 +181,17 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             border-color: #2c7da0;
         }
 
-        /* Popup menu */
+        .item-saved-btn {
+            background: #f0f4f8;
+            border: 1.5px solid #cbdde6;
+            border-radius: 30px;
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #2c7da0;
+        }
+
         .popup-overlay {
             position: fixed;
             top: 0;
@@ -203,7 +209,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         .popup-menu {
             background: white;
             border-radius: 32px;
-            width: 320px;
+            width: 340px;
             max-width: 90vw;
             max-height: 70vh;
             overflow: hidden;
@@ -263,11 +269,6 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             font-size: 1.2rem;
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: 30px;
-        }
-
-        .popup-delete:hover {
-            background: #fde5e0;
         }
 
         .popup-add {
@@ -334,6 +335,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             justify-content: space-between;
             margin-bottom: 14px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn-add {
@@ -350,6 +352,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             gap: 8px;
             margin-bottom: 12px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .item-name { flex: 3; min-width: 120px; }
@@ -360,13 +363,15 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             padding: 10px;
             border-radius: 20px;
             border: 1.5px solid #d1d9e8;
+            width: 100%;
         }
 
         .remove-item {
             background: #e07c6c;
             border: none;
             color: white;
-            width: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 30px;
             cursor: pointer;
         }
@@ -434,12 +439,12 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         @media (max-width: 640px) {
             .field-with-saved { gap: 6px; }
             .saved-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
+            .item-row .saved-icon-btn { width: 34px; height: 34px; }
         }
     </style>
 </head>
 <body>
 <div class="app-container">
-    <!-- Multi-Pages -->
     <div class="pages-section">
         <div class="pages-header">
             <h2>📑 Workspace Pages</h2>
@@ -452,7 +457,6 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         <div class="input-card">
             <h2>📄 Active Page Editor</h2>
             
-            <!-- Store Name with saved button -->
             <div class="form-group">
                 <label>🏢 Store Name</label>
                 <div class="field-with-saved">
@@ -463,7 +467,10 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
 
             <div class="form-group">
                 <label>📞 Contact</label>
-                <input type="text" id="storeContact" placeholder="Phone/Email">
+                <div class="field-with-saved">
+                    <input type="text" id="storeContact" placeholder="Phone/Email">
+                    <button type="button" class="saved-icon-btn" data-field="contact" id="savedContactBtn">📋</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -499,7 +506,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
 
             <div class="items-section">
                 <div class="items-header">
-                    <h3>🛒 Items</h3>
+                    <h3>🛒 Items <span style="font-size:0.7rem; font-weight:normal;">(each row has saved preset)</span></h3>
                     <button type="button" class="btn-add" id="addItemBtn">+ Add Item</button>
                 </div>
                 <div id="itemsContainer"></div>
@@ -540,35 +547,50 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- SAVED INFO STORAGE (per field) ----------
+    // ---------- SAVED INFO STORAGE (all fields + item presets) ----------
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
+        contact: JSON.parse(localStorage.getItem("saved_contacts") || '["+1 234 567 890", "+44 20 7946 0123", "support@store.com"]'),
         title: JSON.parse(localStorage.getItem("saved_receipt_titles") || '["SALES RECEIPT", "TAX INVOICE", "PURCHASE ORDER"]'),
         customer: JSON.parse(localStorage.getItem("saved_customer_names") || '["Walk-in Customer", "John Smith", "Emma Wilson"]'),
-        note: JSON.parse(localStorage.getItem("saved_footer_notes") || '["Thank you for shopping!", "Come again!", "Have a great day"]')
+        note: JSON.parse(localStorage.getItem("saved_footer_notes") || '["Thank you for shopping!", "Come again!", "Have a great day"]'),
+        itemPresets: JSON.parse(localStorage.getItem("saved_item_presets") || '["Organic Apples - 1.99", "Whole Milk - 3.49", "Sourdough Bread - 4.50", "Free Range Eggs - 5.99"]')
     };
 
     function persistSavedData() {
         localStorage.setItem("saved_store_names", JSON.stringify(savedData.store));
+        localStorage.setItem("saved_contacts", JSON.stringify(savedData.contact));
         localStorage.setItem("saved_receipt_titles", JSON.stringify(savedData.title));
         localStorage.setItem("saved_customer_names", JSON.stringify(savedData.customer));
         localStorage.setItem("saved_footer_notes", JSON.stringify(savedData.note));
+        localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
     }
 
     // ---------- POPUP MENU SYSTEM ----------
-    let activePopupField = null; // 'store', 'title', 'customer', 'note'
-    
+    let activePopupField = null;
+    let activeItemRowIndex = null; // for item presets
+
     function closePopup() {
         const overlay = document.querySelector('.popup-overlay');
         if (overlay) overlay.remove();
         activePopupField = null;
+        activeItemRowIndex = null;
     }
 
-    function showPopupForField(fieldType) {
+    function showPopupForField(fieldType, itemIndex = null) {
         if (activePopupField) closePopup();
         activePopupField = fieldType;
-        const items = savedData[fieldType] || [];
-        const fieldLabel = { store: "Store Name", title: "Receipt Title", customer: "Customer Name", note: "Footer Note" }[fieldType];
+        activeItemRowIndex = itemIndex;
+        
+        let items, fieldLabel;
+        if (fieldType === 'itemPreset') {
+            items = savedData.itemPresets;
+            fieldLabel = "Item Preset (Name - Price)";
+        } else {
+            items = savedData[fieldType];
+            const labels = { store: "Store Name", contact: "Contact", title: "Receipt Title", customer: "Customer Name", note: "Footer Note" };
+            fieldLabel = labels[fieldType] || fieldType;
+        }
         
         const overlay = document.createElement('div');
         overlay.className = 'popup-overlay';
@@ -595,28 +617,30 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         `;
         document.body.appendChild(overlay);
         
-        // Close button
         overlay.querySelector('.popup-close').addEventListener('click', closePopup);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) closePopup(); });
         
         // Handle item click (select)
         overlay.querySelectorAll('.popup-item').forEach(el => {
             const value = el.getAttribute('data-value');
-            const selectHandler = () => {
-                // Fill the corresponding input field
-                const inputMap = { store: 'storeName', title: 'receiptTitle', customer: 'customerName', note: 'extraNote' };
-                const inputId = inputMap[fieldType];
-                const targetInput = document.getElementById(inputId);
-                if (targetInput) {
-                    if (fieldType === 'note') targetInput.value = value;
-                    else targetInput.value = value;
-                    updateReceiptDisplay();
-                    saveCurrentPageData();
-                    showToast(`Filled: ${value}`, 1000);
+            el.addEventListener('click', (e) => {
+                if (e.target.classList.contains('popup-delete')) return;
+                if (fieldType === 'itemPreset' && activeItemRowIndex !== null) {
+                    // Parse preset like "Item Name - 9.99"
+                    applyItemPresetToRow(activeItemRowIndex, value);
+                } else {
+                    const inputMap = { store: 'storeName', contact: 'storeContact', title: 'receiptTitle', customer: 'customerName', note: 'extraNote' };
+                    const inputId = inputMap[fieldType];
+                    if (inputId) {
+                        const targetInput = document.getElementById(inputId);
+                        if (targetInput) targetInput.value = value;
+                        updateReceiptDisplay();
+                        saveCurrentPageData();
+                        showToast(`Filled: ${value}`, 1000);
+                    }
                 }
                 closePopup();
-            };
-            el.addEventListener('click', selectHandler);
+            });
         });
         
         // Delete buttons
@@ -624,12 +648,16 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const idx = parseInt(btn.getAttribute('data-index'));
-                if (!isNaN(idx) && savedData[fieldType][idx]) {
-                    savedData[fieldType].splice(idx, 1);
+                if (!isNaN(idx)) {
+                    if (fieldType === 'itemPreset') {
+                        savedData.itemPresets.splice(idx, 1);
+                    } else {
+                        savedData[fieldType].splice(idx, 1);
+                    }
                     persistSavedData();
                     showToast(`Deleted saved ${fieldLabel}`, 800);
                     closePopup();
-                    showPopupForField(fieldType); // refresh popup
+                    showPopupForField(fieldType, activeItemRowIndex);
                 }
             });
         });
@@ -640,11 +668,15 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         addBtn.addEventListener('click', () => {
             const newVal = newInput.value.trim();
             if (newVal) {
-                savedData[fieldType].unshift(newVal);
+                if (fieldType === 'itemPreset') {
+                    savedData.itemPresets.unshift(newVal);
+                } else {
+                    savedData[fieldType].unshift(newVal);
+                }
                 persistSavedData();
                 showToast(`Saved "${newVal}"`, 800);
                 closePopup();
-                showPopupForField(fieldType);
+                showPopupForField(fieldType, activeItemRowIndex);
             } else {
                 showToast("Please enter a value", 800);
             }
@@ -652,11 +684,32 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         newInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addBtn.click(); });
     }
 
+    function applyItemPresetToRow(rowIndex, preset) {
+        // preset format: "Item Name - 12.99" or "Item Name - 0.00"
+        let name = preset;
+        let price = 0;
+        const lastDash = preset.lastIndexOf('-');
+        if (lastDash !== -1) {
+            name = preset.substring(0, lastDash).trim();
+            const pricePart = preset.substring(lastDash + 1).trim();
+            const parsed = parseFloat(pricePart);
+            if (!isNaN(parsed)) price = parsed;
+        }
+        if (itemsArray[rowIndex]) {
+            itemsArray[rowIndex].name = name;
+            itemsArray[rowIndex].price = price;
+            if (itemsArray[rowIndex].quantity === undefined || itemsArray[rowIndex].quantity < 1) itemsArray[rowIndex].quantity = 1;
+            renderItemRows();
+            updateReceiptDisplay();
+            saveCurrentPageData();
+            showToast(`Item preset applied: ${name}`, 1000);
+        }
+    }
+
     // ---------- MULTI-PAGE MANAGEMENT ----------
     let pages = [];
     let activePageId = null;
     let itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }];
-    window.itemsArray = itemsArray;
 
     function saveCurrentPageData() {
         if (!activePageId) return;
@@ -748,7 +801,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         });
     }
 
-    // Items rendering
+    // Items rendering with saved preset button per row
     function renderItemRows() {
         const container = document.getElementById('itemsContainer');
         if (!container) return;
@@ -757,20 +810,36 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
             const row = document.createElement('div'); row.className = 'item-row';
             row.innerHTML = `
                 <input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item">
-                <input type="number" class="item-qty" value="${item.quantity}" step="1">
-                <input type="number" class="item-price" value="${item.price}" step="0.01">
+                <input type="number" class="item-qty" value="${item.quantity}" step="1" min="1">
+                <input type="number" class="item-price" value="${item.price}" step="0.01" min="0">
+                <button class="saved-icon-btn item-saved-btn" data-item-idx="${idx}" title="Saved item presets">📋</button>
                 <button class="remove-item" data-idx="${idx}">✕</button>
             `;
             container.appendChild(row);
         });
+        
+        // Attach remove events
         document.querySelectorAll('.remove-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-idx'));
                 if (!isNaN(idx)) { itemsArray.splice(idx, 1); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item removed",800); }
             });
         });
+        
+        // Attach saved preset buttons for each item row
+        document.querySelectorAll('.item-saved-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt(btn.getAttribute('data-item-idx'));
+                if (!isNaN(idx)) {
+                    showPopupForField('itemPreset', idx);
+                }
+            });
+        });
+        
         attachItemEvents();
     }
+    
     function attachItemEvents() {
         document.querySelectorAll('.item-row').forEach((row, idx) => {
             const update = () => {
@@ -805,14 +874,16 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         });
         return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() };
     }
+    
     function generateReceiptHTML(data) {
-        let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join('');
+        let itemsHtml = data.items.map(i => `<tr><td class="item-name-col">${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join('');
         return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div>
         <div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div>
         <table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
         <div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div>
         <div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`;
     }
+    
     function updateReceiptDisplay() {
         const container = document.getElementById('receiptPreviewContainer');
         if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData());
@@ -857,6 +928,7 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
         loadHistory();
 
         document.getElementById('savedStoreBtn').onclick = () => showPopupForField('store');
+        document.getElementById('savedContactBtn').onclick = () => showPopupForField('contact');
         document.getElementById('savedTitleBtn').onclick = () => showPopupForField('title');
         document.getElementById('savedCustomerBtn').onclick = () => showPopupForField('customer');
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
@@ -881,4 +953,3 @@ Here is an HTML document that implements a cleaner "saved info" system with a po
 </script>
 </body>
 </html>
-```
