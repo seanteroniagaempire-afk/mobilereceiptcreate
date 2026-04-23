@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | Smart Saved Info + Items Presets | Multi-Page</title>
+    <title>Pro Receipt | Auto-Named PDF + Saved Presets | Multi-Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -147,6 +147,17 @@
             margin-bottom: 1.2rem;
             border-left: 5px solid #2c7da0;
             padding-left: 14px;
+        }
+
+        .info-hint {
+            font-size: 0.7rem;
+            color: #5f7d9c;
+            margin-top: -8px;
+            margin-bottom: 16px;
+            padding-left: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .field-with-saved {
@@ -428,18 +439,28 @@
             transform: translateX(-50%);
             background: #1e2a36;
             color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
+            padding: 14px 24px;
+            border-radius: 60px;
             z-index: 2100;
             opacity: 0;
-            transition: opacity 0.25s;
+            transition: opacity 0.3s ease;
             pointer-events: none;
+            font-size: 0.85rem;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            font-family: monospace;
         }
+        
+        .toast-msg.success { background: #1e6f3f; border-left: 4px solid #7ae9a7; }
+        .toast-msg.info { background: #2c7da0; }
+        .toast-msg.warning { background: #c97e1a; }
 
         @media (max-width: 640px) {
             .field-with-saved { gap: 6px; }
             .saved-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
             .item-row .saved-icon-btn { width: 34px; height: 34px; }
+            .toast-msg { font-size: 0.75rem; padding: 10px 16px; }
         }
     </style>
 </head>
@@ -456,6 +477,9 @@
     <div class="main-grid">
         <div class="input-card">
             <h2>📄 Active Page Editor</h2>
+            <div class="info-hint">
+                💡 <span>Click 📋 to load saved presets | Each field has its own saved library</span>
+            </div>
             
             <div class="form-group">
                 <label>🏢 Store Name</label>
@@ -498,15 +522,15 @@
                 <label>📄 PDF Paper Size</label>
                 <select id="paperSize">
                     <option value="A3">A3 (297x420mm)</option>
-                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="A4" selected>A4 (210x297mm)</option>
                     <option value="A5">A5 (148x210mm)</option>
-                    <option value="Letter">Letter</option>
+                    <option value="Letter">Letter (8.5x11in)</option>
                 </select>
             </div>
 
             <div class="items-section">
                 <div class="items-header">
-                    <h3>🛒 Items <span style="font-size:0.7rem; font-weight:normal;">(each row has saved preset)</span></h3>
+                    <h3>🛒 Items <span style="font-size:0.7rem; font-weight:normal;">(📋 preset per row)</span></h3>
                     <button type="button" class="btn-add" id="addItemBtn">+ Add Item</button>
                 </div>
                 <div id="itemsContainer"></div>
@@ -521,9 +545,13 @@
             </div>
 
             <div class="action-buttons">
-                <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh</button>
-                <button class="btn-secondary" id="savePdfBtn">📥 Save PDF</button>
-                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
+                <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
+                <button class="btn-secondary" id="savePdfBtn">📥 Download PDF File</button>
+                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
+            </div>
+            <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
+                📁 <strong>PDF Auto-Naming:</strong> Receipt_YYYY-MM-DD_HH-MM-SS_IDxxxx.pdf<br>
+                💾 <strong>History:</strong> Stores data locally inside app (reloadable, not PDF)
             </div>
         </div>
 
@@ -534,20 +562,54 @@
     </div>
 
     <div class="history-card">
-        <h2>📜 Receipt History</h2>
+        <h2>📜 Receipt History <span style="font-size:0.75rem; font-weight:normal;">(in-app storage)</span></h2>
         <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
             <button class="sort-btn" data-sort="date" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">📅 Sort by Date</button>
             <button class="sort-btn" data-sort="name" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">🔤 Sort by Store</button>
             <button class="sort-btn" data-sort="total" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">💰 Sort by Total</button>
             <button id="clearAllHistoryBtn" style="background:#dc2626; color:white; border:none; padding:8px 16px; border-radius:40px;">🗑️ Clear All</button>
         </div>
-        <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet.</div></div>
+        <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet. Create and save to history!</div></div>
     </div>
 </div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- SAVED INFO STORAGE (all fields + item presets) ----------
+    // ======================== AUTO PDF NAMING UTILITY ========================
+    function generateAutoFileName() {
+        // Format: Receipt_2026-04-23_14-35-22_ID8742.pdf
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        const timeStr = `${hours}-${minutes}-${seconds}`;
+        
+        // Generate unique ID from timestamp (last 6 digits) + random 2 digits for safety
+        const timestamp = now.getTime();
+        const shortId = timestamp.toString().slice(-6);
+        const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+        const receiptId = `${shortId}${randomSuffix}`;
+        
+        return `Receipt_${dateStr}_${timeStr}_ID${receiptId}.pdf`;
+    }
+    
+    // Enhanced Toast
+    function showToast(message, type = 'info', duration = 3000) {
+        const toast = document.getElementById('toastMsg');
+        toast.textContent = message;
+        toast.className = `toast-msg ${type}`;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { toast.className = 'toast-msg'; }, 300);
+        }, duration);
+    }
+
+    // ---------- SAVED INFO STORAGE ----------
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
         contact: JSON.parse(localStorage.getItem("saved_contacts") || '["+1 234 567 890", "+44 20 7946 0123", "support@store.com"]'),
@@ -566,388 +628,102 @@
         localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
     }
 
-    // ---------- POPUP MENU SYSTEM ----------
+    // ---------- POPUP SYSTEM ----------
     let activePopupField = null;
-    let activeItemRowIndex = null; // for item presets
-
-    function closePopup() {
-        const overlay = document.querySelector('.popup-overlay');
-        if (overlay) overlay.remove();
-        activePopupField = null;
-        activeItemRowIndex = null;
-    }
-
+    let activeItemRowIndex = null;
+    function closePopup() { const overlay = document.querySelector('.popup-overlay'); if (overlay) overlay.remove(); activePopupField = null; activeItemRowIndex = null; }
+    
     function showPopupForField(fieldType, itemIndex = null) {
         if (activePopupField) closePopup();
         activePopupField = fieldType;
         activeItemRowIndex = itemIndex;
-        
         let items, fieldLabel;
-        if (fieldType === 'itemPreset') {
-            items = savedData.itemPresets;
-            fieldLabel = "Item Preset (Name - Price)";
-        } else {
-            items = savedData[fieldType];
-            const labels = { store: "Store Name", contact: "Contact", title: "Receipt Title", customer: "Customer Name", note: "Footer Note" };
-            fieldLabel = labels[fieldType] || fieldType;
-        }
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'popup-overlay';
-        overlay.innerHTML = `
-            <div class="popup-menu">
-                <div class="popup-header">
-                    <span>📌 Saved ${fieldLabel}</span>
-                    <button class="popup-close">✕</button>
-                </div>
-                <div class="popup-list" id="popupList">
-                    ${items.length === 0 ? '<div class="empty-saved">✨ No saved items. Add one below.</div>' : 
-                      items.map((val, idx) => `
-                        <div class="popup-item" data-value="${escapeHtml(val)}" data-index="${idx}">
-                            <span class="popup-value">${escapeHtml(val)}</span>
-                            <button class="popup-delete" data-index="${idx}">🗑️</button>
-                        </div>
-                      `).join('')}
-                </div>
-                <div class="popup-add">
-                    <input type="text" id="newSavedValue" placeholder="New ${fieldLabel.toLowerCase()}...">
-                    <button id="addSavedBtn">+ Save</button>
-                </div>
-            </div>
-        `;
+        if (fieldType === 'itemPreset') { items = savedData.itemPresets; fieldLabel = "Item Preset (Name - Price)"; }
+        else { items = savedData[fieldType]; const labels = { store: "Store Name", contact: "Contact", title: "Receipt Title", customer: "Customer Name", note: "Footer Note" }; fieldLabel = labels[fieldType] || fieldType; }
+        const overlay = document.createElement('div'); overlay.className = 'popup-overlay';
+        overlay.innerHTML = `<div class="popup-menu"><div class="popup-header"><span>📌 Saved ${fieldLabel}</span><button class="popup-close">✕</button></div><div class="popup-list" id="popupList">${items.length === 0 ? '<div class="empty-saved">✨ No saved items. Add one below.</div>' : items.map((val, idx) => `<div class="popup-item" data-value="${escapeHtml(val)}" data-index="${idx}"><span class="popup-value">${escapeHtml(val)}</span><button class="popup-delete" data-index="${idx}">🗑️</button></div>`).join('')}</div><div class="popup-add"><input type="text" id="newSavedValue" placeholder="New ${fieldLabel.toLowerCase()}..."><button id="addSavedBtn">+ Save</button></div></div>`;
         document.body.appendChild(overlay);
-        
         overlay.querySelector('.popup-close').addEventListener('click', closePopup);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) closePopup(); });
-        
-        // Handle item click (select)
-        overlay.querySelectorAll('.popup-item').forEach(el => {
-            const value = el.getAttribute('data-value');
-            el.addEventListener('click', (e) => {
-                if (e.target.classList.contains('popup-delete')) return;
-                if (fieldType === 'itemPreset' && activeItemRowIndex !== null) {
-                    // Parse preset like "Item Name - 9.99"
-                    applyItemPresetToRow(activeItemRowIndex, value);
-                } else {
-                    const inputMap = { store: 'storeName', contact: 'storeContact', title: 'receiptTitle', customer: 'customerName', note: 'extraNote' };
-                    const inputId = inputMap[fieldType];
-                    if (inputId) {
-                        const targetInput = document.getElementById(inputId);
-                        if (targetInput) targetInput.value = value;
-                        updateReceiptDisplay();
-                        saveCurrentPageData();
-                        showToast(`Filled: ${value}`, 1000);
-                    }
-                }
-                closePopup();
-            });
-        });
-        
-        // Delete buttons
-        overlay.querySelectorAll('.popup-delete').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const idx = parseInt(btn.getAttribute('data-index'));
-                if (!isNaN(idx)) {
-                    if (fieldType === 'itemPreset') {
-                        savedData.itemPresets.splice(idx, 1);
-                    } else {
-                        savedData[fieldType].splice(idx, 1);
-                    }
-                    persistSavedData();
-                    showToast(`Deleted saved ${fieldLabel}`, 800);
-                    closePopup();
-                    showPopupForField(fieldType, activeItemRowIndex);
-                }
-            });
-        });
-        
-        // Add new item
-        const addBtn = overlay.querySelector('#addSavedBtn');
-        const newInput = overlay.querySelector('#newSavedValue');
-        addBtn.addEventListener('click', () => {
-            const newVal = newInput.value.trim();
-            if (newVal) {
-                if (fieldType === 'itemPreset') {
-                    savedData.itemPresets.unshift(newVal);
-                } else {
-                    savedData[fieldType].unshift(newVal);
-                }
-                persistSavedData();
-                showToast(`Saved "${newVal}"`, 800);
-                closePopup();
-                showPopupForField(fieldType, activeItemRowIndex);
-            } else {
-                showToast("Please enter a value", 800);
-            }
-        });
+        overlay.querySelectorAll('.popup-item').forEach(el => { el.addEventListener('click', (e) => { if (e.target.classList.contains('popup-delete')) return; const value = el.getAttribute('data-value'); if (fieldType === 'itemPreset' && activeItemRowIndex !== null) applyItemPresetToRow(activeItemRowIndex, value); else { const inputMap = { store: 'storeName', contact: 'storeContact', title: 'receiptTitle', customer: 'customerName', note: 'extraNote' }; const inputId = inputMap[fieldType]; if (inputId) document.getElementById(inputId).value = value; updateReceiptDisplay(); saveCurrentPageData(); showToast(`✓ Filled: ${value}`, 'success', 1200); } closePopup(); }); });
+        overlay.querySelectorAll('.popup-delete').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-index')); if (!isNaN(idx)) { if (fieldType === 'itemPreset') savedData.itemPresets.splice(idx,1); else savedData[fieldType].splice(idx,1); persistSavedData(); showToast(`🗑️ Deleted saved ${fieldLabel}`, 'warning', 1000); closePopup(); showPopupForField(fieldType, activeItemRowIndex); } }); });
+        const addBtn = overlay.querySelector('#addSavedBtn'); const newInput = overlay.querySelector('#newSavedValue');
+        addBtn.addEventListener('click', () => { const newVal = newInput.value.trim(); if (newVal) { if (fieldType === 'itemPreset') savedData.itemPresets.unshift(newVal); else savedData[fieldType].unshift(newVal); persistSavedData(); showToast(`💾 Saved "${newVal}"`, 'success', 1200); closePopup(); showPopupForField(fieldType, activeItemRowIndex); } else showToast("Please enter a value", 'warning', 1000); });
         newInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addBtn.click(); });
     }
-
+    
     function applyItemPresetToRow(rowIndex, preset) {
-        // preset format: "Item Name - 12.99" or "Item Name - 0.00"
-        let name = preset;
-        let price = 0;
-        const lastDash = preset.lastIndexOf('-');
-        if (lastDash !== -1) {
-            name = preset.substring(0, lastDash).trim();
-            const pricePart = preset.substring(lastDash + 1).trim();
-            const parsed = parseFloat(pricePart);
-            if (!isNaN(parsed)) price = parsed;
-        }
-        if (itemsArray[rowIndex]) {
-            itemsArray[rowIndex].name = name;
-            itemsArray[rowIndex].price = price;
-            if (itemsArray[rowIndex].quantity === undefined || itemsArray[rowIndex].quantity < 1) itemsArray[rowIndex].quantity = 1;
-            renderItemRows();
-            updateReceiptDisplay();
-            saveCurrentPageData();
-            showToast(`Item preset applied: ${name}`, 1000);
-        }
+        let name = preset; let price = 0; const lastDash = preset.lastIndexOf('-');
+        if (lastDash !== -1) { name = preset.substring(0, lastDash).trim(); const pricePart = preset.substring(lastDash + 1).trim(); const parsed = parseFloat(pricePart); if (!isNaN(parsed)) price = parsed; }
+        if (itemsArray[rowIndex]) { itemsArray[rowIndex].name = name; itemsArray[rowIndex].price = price; if (itemsArray[rowIndex].quantity === undefined || itemsArray[rowIndex].quantity < 1) itemsArray[rowIndex].quantity = 1; renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📋 Item preset: ${name} ($${price})`, 'success', 1500); }
     }
 
-    // ---------- MULTI-PAGE MANAGEMENT ----------
-    let pages = [];
-    let activePageId = null;
-    let itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }];
-
-    function saveCurrentPageData() {
-        if (!activePageId) return;
-        const page = pages.find(p => p.id === activePageId);
-        if (page) {
-            page.formData = {
-                storeName: document.getElementById('storeName').value,
-                storeContact: document.getElementById('storeContact').value,
-                receiptTitle: document.getElementById('receiptTitle').value,
-                customerName: document.getElementById('customerName').value,
-                dateVal: document.getElementById('receiptDate').value,
-                extraNote: document.getElementById('extraNote').value,
-                paperSize: document.getElementById('paperSize').value
-            };
-            page.itemsArray = JSON.parse(JSON.stringify(itemsArray));
-        }
-    }
-
-    function loadPageToUI(page) {
-        if (!page) return;
-        document.getElementById('storeName').value = page.formData.storeName || "";
-        document.getElementById('storeContact').value = page.formData.storeContact || "";
-        document.getElementById('receiptTitle').value = page.formData.receiptTitle || "";
-        document.getElementById('customerName').value = page.formData.customerName || "";
-        document.getElementById('receiptDate').value = page.formData.dateVal || new Date().toISOString().split('T')[0];
-        document.getElementById('extraNote').value = page.formData.extraNote || "";
-        document.getElementById('paperSize').value = page.formData.paperSize || "A4";
-        itemsArray = page.itemsArray.map(i => ({...i}));
-        renderItemRows();
-        updateReceiptDisplay();
-    }
-
-    function createNewPage() {
-        saveCurrentPageData();
-        const newId = Date.now();
-        const pageNum = pages.length + 1;
-        const newPage = {
-            id: newId,
-            name: `Page ${pageNum}`,
-            formData: {
-                storeName: "New Store", storeContact: "", receiptTitle: "RECEIPT", customerName: "Guest",
-                dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you!", paperSize: "A4"
-            },
-            itemsArray: [{ name: "Sample Item", quantity: 1, price: 9.99 }]
-        };
-        pages.push(newPage);
-        activePageId = newId;
-        renderPageTabs();
-        loadPageToUI(newPage);
-        showToast(`📄 New page created`, 1000);
-    }
-
-    function renderPageTabs() {
-        const container = document.getElementById('pageTabsContainer');
-        if (!container) return;
-        if (pages.length === 0) { container.innerHTML = '<span>Click + to add page</span>'; return; }
-        container.innerHTML = pages.map(p => `
-            <div class="page-tab ${activePageId === p.id ? 'active' : ''}" data-id="${p.id}">
-                <span>📄 ${escapeHtml(p.name)}</span>
-                <span class="delete-page" data-id="${p.id}">✕</span>
-            </div>
-        `).join('');
-        container.querySelectorAll('.page-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-page')) return;
-                const pid = parseInt(tab.getAttribute('data-id'));
-                saveCurrentPageData();
-                activePageId = pid;
-                const target = pages.find(p => p.id === pid);
-                if (target) loadPageToUI(target);
-                renderPageTabs();
-            });
-            const del = tab.querySelector('.delete-page');
-            if (del) {
-                del.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const pid = parseInt(del.getAttribute('data-id'));
-                    if (pages.length === 1) { showToast("Cannot delete last page", 1000); return; }
-                    pages = pages.filter(p => p.id !== pid);
-                    if (activePageId === pid) {
-                        activePageId = pages[0]?.id || null;
-                        if (activePageId) loadPageToUI(pages[0]);
-                    }
-                    renderPageTabs();
-                    if (activePageId) loadPageToUI(pages.find(p => p.id === activePageId));
-                    showToast("Page deleted", 800);
-                });
-            }
-        });
-    }
-
-    // Items rendering with saved preset button per row
-    function renderItemRows() {
-        const container = document.getElementById('itemsContainer');
-        if (!container) return;
-        container.innerHTML = '';
-        itemsArray.forEach((item, idx) => {
-            const row = document.createElement('div'); row.className = 'item-row';
-            row.innerHTML = `
-                <input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item">
-                <input type="number" class="item-qty" value="${item.quantity}" step="1" min="1">
-                <input type="number" class="item-price" value="${item.price}" step="0.01" min="0">
-                <button class="saved-icon-btn item-saved-btn" data-item-idx="${idx}" title="Saved item presets">📋</button>
-                <button class="remove-item" data-idx="${idx}">✕</button>
-            `;
-            container.appendChild(row);
-        });
-        
-        // Attach remove events
-        document.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(btn.getAttribute('data-idx'));
-                if (!isNaN(idx)) { itemsArray.splice(idx, 1); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item removed",800); }
-            });
-        });
-        
-        // Attach saved preset buttons for each item row
-        document.querySelectorAll('.item-saved-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const idx = parseInt(btn.getAttribute('data-item-idx'));
-                if (!isNaN(idx)) {
-                    showPopupForField('itemPreset', idx);
-                }
-            });
-        });
-        
-        attachItemEvents();
-    }
+    // ---------- MULTI-PAGE ----------
+    let pages = []; let activePageId = null; let itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }];
+    function saveCurrentPageData() { if (!activePageId) return; const page = pages.find(p => p.id === activePageId); if (page) { page.formData = { storeName: document.getElementById('storeName').value, storeContact: document.getElementById('storeContact').value, receiptTitle: document.getElementById('receiptTitle').value, customerName: document.getElementById('customerName').value, dateVal: document.getElementById('receiptDate').value, extraNote: document.getElementById('extraNote').value, paperSize: document.getElementById('paperSize').value }; page.itemsArray = JSON.parse(JSON.stringify(itemsArray)); } }
+    function loadPageToUI(page) { if (!page) return; document.getElementById('storeName').value = page.formData.storeName || ""; document.getElementById('storeContact').value = page.formData.storeContact || ""; document.getElementById('receiptTitle').value = page.formData.receiptTitle || ""; document.getElementById('customerName').value = page.formData.customerName || ""; document.getElementById('receiptDate').value = page.formData.dateVal || new Date().toISOString().split('T')[0]; document.getElementById('extraNote').value = page.formData.extraNote || ""; document.getElementById('paperSize').value = page.formData.paperSize || "A4"; itemsArray = page.itemsArray.map(i => ({...i})); renderItemRows(); updateReceiptDisplay(); }
+    function createNewPage() { saveCurrentPageData(); const newId = Date.now(); const pageNum = pages.length + 1; const newPage = { id: newId, name: `Page ${pageNum}`, formData: { storeName: "New Store", storeContact: "", receiptTitle: "RECEIPT", customerName: "Guest", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you!", paperSize: "A4" }, itemsArray: [{ name: "Sample Item", quantity: 1, price: 9.99 }] }; pages.push(newPage); activePageId = newId; renderPageTabs(); loadPageToUI(newPage); showToast(`📄 New page "${newPage.name}" created`, 'info', 1200); }
+    function renderPageTabs() { const container = document.getElementById('pageTabsContainer'); if (!container) return; if (pages.length === 0) { container.innerHTML = '<span>Click + to add page</span>'; return; } container.innerHTML = pages.map(p => `<div class="page-tab ${activePageId === p.id ? 'active' : ''}" data-id="${p.id}"><span>📄 ${escapeHtml(p.name)}</span><span class="delete-page" data-id="${p.id}">✕</span></div>`).join(''); container.querySelectorAll('.page-tab').forEach(tab => { tab.addEventListener('click', (e) => { if (e.target.classList.contains('delete-page')) return; const pid = parseInt(tab.getAttribute('data-id')); saveCurrentPageData(); activePageId = pid; const target = pages.find(p => p.id === pid); if (target) loadPageToUI(target); renderPageTabs(); }); const del = tab.querySelector('.delete-page'); if (del) { del.addEventListener('click', (e) => { e.stopPropagation(); const pid = parseInt(del.getAttribute('data-id')); if (pages.length === 1) { showToast("Cannot delete last page", 'warning', 1000); return; } pages = pages.filter(p => p.id !== pid); if (activePageId === pid) { activePageId = pages[0]?.id || null; if (activePageId) loadPageToUI(pages[0]); } renderPageTabs(); if (activePageId) loadPageToUI(pages.find(p => p.id === activePageId)); showToast("Page deleted", 'info', 800); }); }); }
     
-    function attachItemEvents() {
-        document.querySelectorAll('.item-row').forEach((row, idx) => {
-            const update = () => {
-                if (itemsArray[idx]) {
-                    itemsArray[idx].name = row.querySelector('.item-name')?.value || "";
-                    itemsArray[idx].quantity = parseFloat(row.querySelector('.item-qty')?.value) || 1;
-                    itemsArray[idx].price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-                    updateReceiptDisplay();
-                    saveCurrentPageData();
-                }
-            };
-            row.querySelector('.item-name')?.addEventListener('input', update);
-            row.querySelector('.item-qty')?.addEventListener('input', update);
-            row.querySelector('.item-price')?.addEventListener('input', update);
-        });
-    }
-
-    // Receipt logic
-    function getCurrentReceiptData() {
-        const storeName = document.getElementById('storeName').value || "Store";
-        const storeContact = document.getElementById('storeContact').value || "";
-        const receiptTitle = document.getElementById('receiptTitle').value || "RECEIPT";
-        const customerName = document.getElementById('customerName').value || "Guest";
-        const dateVal = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0];
-        const extraNote = document.getElementById('extraNote').value || "";
-        let subtotal = 0;
-        const itemsCopy = itemsArray.map(item => {
-            const qty = parseFloat(item.quantity) || 0;
-            const price = parseFloat(item.price) || 0;
-            subtotal += qty * price;
-            return { ...item, quantity: qty, price, total: qty * price };
-        });
-        return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() };
-    }
+    function renderItemRows() { const container = document.getElementById('itemsContainer'); if (!container) return; container.innerHTML = ''; itemsArray.forEach((item, idx) => { const row = document.createElement('div'); row.className = 'item-row'; row.innerHTML = `<input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item"><input type="number" class="item-qty" value="${item.quantity}" step="1" min="1"><input type="number" class="item-price" value="${item.price}" step="0.01" min="0"><button class="saved-icon-btn item-saved-btn" data-item-idx="${idx}" title="Saved item presets">📋</button><button class="remove-item" data-idx="${idx}">✕</button>`; container.appendChild(row); }); document.querySelectorAll('.remove-item').forEach(btn => { btn.addEventListener('click', (e) => { const idx = parseInt(btn.getAttribute('data-idx')); if (!isNaN(idx)) { itemsArray.splice(idx, 1); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item removed", 'info', 800); } }); }); document.querySelectorAll('.item-saved-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-item-idx')); if (!isNaN(idx)) showPopupForField('itemPreset', idx); }); }); attachItemEvents(); }
+    function attachItemEvents() { document.querySelectorAll('.item-row').forEach((row, idx) => { const update = () => { if (itemsArray[idx]) { itemsArray[idx].name = row.querySelector('.item-name')?.value || ""; itemsArray[idx].quantity = parseFloat(row.querySelector('.item-qty')?.value) || 1; itemsArray[idx].price = parseFloat(row.querySelector('.item-price')?.value) || 0; updateReceiptDisplay(); saveCurrentPageData(); } }; row.querySelector('.item-name')?.addEventListener('input', update); row.querySelector('.item-qty')?.addEventListener('input', update); row.querySelector('.item-price')?.addEventListener('input', update); }); }
     
-    function generateReceiptHTML(data) {
-        let itemsHtml = data.items.map(i => `<tr><td class="item-name-col">${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join('');
-        return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div>
-        <div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div>
-        <table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
-        <div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div>
-        <div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`;
-    }
-    
-    function updateReceiptDisplay() {
-        const container = document.getElementById('receiptPreviewContainer');
-        if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData());
-    }
+    function getCurrentReceiptData() { const storeName = document.getElementById('storeName').value || "Store"; const storeContact = document.getElementById('storeContact').value || ""; const receiptTitle = document.getElementById('receiptTitle').value || "RECEIPT"; const customerName = document.getElementById('customerName').value || "Guest"; const dateVal = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0]; const extraNote = document.getElementById('extraNote').value || ""; let subtotal = 0; const itemsCopy = itemsArray.map(item => { const qty = parseFloat(item.quantity) || 0; const price = parseFloat(item.price) || 0; subtotal += qty * price; return { ...item, quantity: qty, price, total: qty * price }; }); return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() }; }
+    function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `</tr><td class="item-name-col">${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
+    function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
 
-    // History
-    let receiptHistory = [];
-    function loadHistory() { const stored = localStorage.getItem("receiptHistory"); if(stored) receiptHistory = JSON.parse(stored); renderHistory(); }
-    function saveHistoryStorage() { localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory)); }
-    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast("Saved to history",1200); }
-    function renderHistory() {
-        const container = document.getElementById('historyList'); if(!container) return;
-        if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">No receipts saved.</div>'; return; }
-        container.innerHTML = receiptHistory.map(e => `<div class="history-item"><div><strong>🏪 ${escapeHtml(e.storeName)}</strong><br>📅 ${e.date} | 👤 ${escapeHtml(e.customerName)}<br>💰 $${e.total.toFixed(2)}</div><div><button class="load-history-btn" data-id="${e.id}">Load</button><button class="delete-history-btn" data-id="${e.id}">Delete</button></div></div>`).join('');
-        document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(h=>h.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Loaded",1000); } }));
-        document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(h=>h.id!==id); saveHistoryStorage(); renderHistory(); showToast("Deleted",800); }));
-    }
-    function clearAllHistory() { if(confirm("Delete all history?")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("Cleared",1000); } }
-
-    async function downloadPDF() {
+    // ======================== ENHANCED PDF DOWNLOAD with AUTO-NAMING ========================
+    async function downloadReceiptAsPDF() {
         const element = document.getElementById('receiptPreviewContainer');
         const paperSize = document.getElementById('paperSize').value;
         let format = paperSize === 'A3' ? 'a3' : paperSize === 'A5' ? 'a5' : paperSize === 'Letter' ? 'letter' : 'a4';
+        const autoFileName = generateAutoFileName();
         const origWidth = element.style.width;
         element.style.width = paperSize === 'A3' ? '270mm' : paperSize === 'A4' ? '190mm' : paperSize === 'A5' ? '130mm' : '200mm';
-        await html2pdf().set({ margin: [8,8,8,8], filename: `receipt_${Date.now()}.pdf`, html2canvas: { scale: 2.5 }, jsPDF: { unit: 'mm', format, orientation: 'portrait' } }).from(element).save();
-        element.style.width = origWidth;
-        showToast(`PDF saved (${paperSize})`, 2000);
+        
+        try {
+            const opt = { margin: [8,8,8,8], filename: autoFileName, html2canvas: { scale: 2.5, logging: false }, jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } };
+            await html2pdf().set(opt).from(element).save();
+            
+            // Show detailed success message with file name and location hint
+            let downloadPath = "📁 Your device's default Downloads folder";
+            if (navigator.userAgent.indexOf('Chrome') > -1) downloadPath = "📂 Chrome Downloads (usually ~/Downloads/)";
+            else if (navigator.userAgent.indexOf('Firefox') > -1) downloadPath = "📂 Firefox Downloads (~/Downloads/)";
+            else if (navigator.userAgent.indexOf('Safari') > -1) downloadPath = "📂 Safari Downloads (~/Downloads/)";
+            
+            showToast(`✅ PDF Downloaded!\n📄 ${autoFileName}\n${downloadPath}`, 'success', 5000);
+        } catch (err) {
+            console.error("PDF Error:", err);
+            showToast(`❌ PDF generation failed: ${err.message}`, 'warning', 3000);
+        } finally { element.style.width = origWidth; }
     }
+
+    // History (in-app storage)
+    let receiptHistory = [];
+    function loadHistory() { const stored = localStorage.getItem("receiptHistory"); if(stored) receiptHistory = JSON.parse(stored); renderHistory(); }
+    function saveHistoryStorage() { localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory)); }
+    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast(`💾 Receipt saved to in-app history (not a PDF file)`, 'info', 2500); }
+    function renderHistory() { const container = document.getElementById('historyList'); if(!container) return; if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">📭 No saved receipts in history. Create and click "Save to History"</div>'; return; } container.innerHTML = receiptHistory.map(e => `<div class="history-item"><div><strong>🏪 ${escapeHtml(e.storeName)}</strong><br>📅 ${e.date} | 👤 ${escapeHtml(e.customerName)}<br>💰 $${e.total.toFixed(2)}</div><div><button class="load-history-btn" data-id="${e.id}">Load</button><button class="delete-history-btn" data-id="${e.id}">Delete</button></div></div>`).join(''); document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(h=>h.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📂 Loaded from history: ${fd.storeName}`, 'success', 1500); } })); document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(h=>h.id!==id); saveHistoryStorage(); renderHistory(); showToast("🗑️ Deleted from history", 'info', 800); })); }
+    function clearAllHistory() { if(confirm("⚠️ Delete ALL saved receipts from in-app history? (PDF files are not affected)")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("All history cleared (PDF files remain in your Downloads)", 'info', 2000); } }
 
     // Initialization
     function init() {
-        if(pages.length === 0) {
-            const defaultPage = { id: Date.now(), name: "Page 1", formData: { storeName: "Sunshine Mart", storeContact: "+1 234 567 890", receiptTitle: "SALES RECEIPT", customerName: "Walk-in Customer", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you for your purchase!", paperSize: "A4" }, itemsArray: [{ name:"Organic Apples", quantity:2, price:1.99 }, { name:"Bread", quantity:1, price:3.49 }] };
-            pages.push(defaultPage);
-            activePageId = defaultPage.id;
-        }
-        loadPageToUI(pages.find(p=>p.id===activePageId));
-        renderPageTabs();
-        renderItemRows();
-        updateReceiptDisplay();
-        loadHistory();
-
+        if(pages.length === 0) { const defaultPage = { id: Date.now(), name: "Page 1", formData: { storeName: "Sunshine Mart", storeContact: "+1 234 567 890", receiptTitle: "SALES RECEIPT", customerName: "Walk-in Customer", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you for your purchase!", paperSize: "A4" }, itemsArray: [{ name:"Organic Apples", quantity:2, price:1.99 }, { name:"Bread", quantity:1, price:3.49 }] }; pages.push(defaultPage); activePageId = defaultPage.id; }
+        loadPageToUI(pages.find(p=>p.id===activePageId)); renderPageTabs(); renderItemRows(); updateReceiptDisplay(); loadHistory();
         document.getElementById('savedStoreBtn').onclick = () => showPopupForField('store');
         document.getElementById('savedContactBtn').onclick = () => showPopupForField('contact');
         document.getElementById('savedTitleBtn').onclick = () => showPopupForField('title');
         document.getElementById('savedCustomerBtn').onclick = () => showPopupForField('customer');
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
-        document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item added",800); };
-        document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("Refreshed",800); };
-        document.getElementById('savePdfBtn').onclick = downloadPDF;
+        document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("➕ New item added", 'info', 800); };
+        document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'info', 800); };
+        document.getElementById('savePdfBtn').onclick = downloadReceiptAsPDF;
         document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
         document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
         document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
-        ['storeName','storeContact','receiptTitle','customerName','receiptDate','extraNote','paperSize'].forEach(id => {
-            const el = document.getElementById(id);
-            if(el) el.addEventListener('input', () => { updateReceiptDisplay(); saveCurrentPageData(); });
-        });
-        document.querySelectorAll('.sort-btn').forEach(btn => {
-            btn.addEventListener('click', () => { let sort = btn.getAttribute('data-sort'); receiptHistory.sort((a,b) => sort==='date'?b.timestamp-a.timestamp: sort==='name'?a.storeName.localeCompare(b.storeName): b.total-a.total); renderHistory(); });
-        });
+        ['storeName','storeContact','receiptTitle','customerName','receiptDate','extraNote','paperSize'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { updateReceiptDisplay(); saveCurrentPageData(); }); });
+        document.querySelectorAll('.sort-btn').forEach(btn => { btn.addEventListener('click', () => { let sort = btn.getAttribute('data-sort'); receiptHistory.sort((a,b) => sort==='date'?b.timestamp-a.timestamp: sort==='name'?a.storeName.localeCompare(b.storeName): b.total-a.total); renderHistory(); }); });
     }
-
-    function showToast(msg, dur=1800) { const t=document.getElementById('toastMsg'); t.textContent=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0', dur); }
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
     init();
 </script>
