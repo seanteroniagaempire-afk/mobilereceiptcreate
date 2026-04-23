@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | A3 PDF + History | Mobile Ready</title>
+    <title>Pro Receipt | Multi-Page + Saved Info Bars | A3 PDF History</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -26,6 +26,204 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+        }
+
+        /* PAGE TABS SECTION (Multi-Page) */
+        .pages-section {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            padding: 18px 20px;
+        }
+
+        .pages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #e2edf2;
+            padding-bottom: 12px;
+        }
+
+        .pages-header h2 {
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #1e2b3c, #2c4c6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-page-btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .page-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #cbdde6;
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+
+        .page-tab {
+            background: #f1f5f9;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+
+        .page-tab.active {
+            background: #2c7da0;
+            color: white;
+            box-shadow: 0 2px 8px rgba(44,125,160,0.3);
+        }
+
+        .page-tab .delete-page {
+            background: rgba(0,0,0,0.15);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            margin-left: 6px;
+        }
+
+        .page-tab .delete-page:hover {
+            background: #c0392b;
+        }
+
+        /* Saved Info Bars for each fill bar (dynamic per field) */
+        .saved-info-group {
+            background: #f9fbfd;
+            border-radius: 24px;
+            padding: 16px;
+            margin: 12px 0 16px;
+            border: 1px solid #e0edf2;
+        }
+
+        .saved-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .saved-header label {
+            font-weight: 700;
+            color: #1f4e6e;
+            font-size: 0.85rem;
+        }
+
+        .saved-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .saved-badge {
+            background: white;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #cbdde6;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .saved-badge:hover {
+            background: #e6f2f9;
+            border-color: #2c7da0;
+        }
+
+        .saved-value {
+            font-weight: 500;
+            color: #1e4663;
+        }
+
+        .delete-saved {
+            background: none;
+            border: none;
+            color: #e07c6c;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0 4px;
+            border-radius: 20px;
+        }
+
+        .delete-saved:hover {
+            color: #c0392b;
+            transform: scale(1.1);
+        }
+
+        .add-saved-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .add-saved-input input {
+            flex: 2;
+            padding: 8px 14px;
+            border-radius: 30px;
+            border: 1.5px solid #cbdde6;
+            font-size: 0.85rem;
+        }
+
+        .small-btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .small-btn-outline {
+            background: transparent;
+            border: 1px solid #2c7da0;
+            color: #2c7da0;
         }
 
         .main-grid {
@@ -70,7 +268,7 @@
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            margin-bottom: 1.2rem;
+            margin-bottom: 1rem;
             border-left: 5px solid #2c7da0;
             padding-left: 14px;
         }
@@ -96,12 +294,6 @@
             background-color: #fefefe;
             font-family: inherit;
             width: 100%;
-        }
-
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-            outline: none;
-            border-color: #2c7da0;
-            box-shadow: 0 0 0 3px rgba(44,125,160,0.15);
         }
 
         .items-section {
@@ -159,7 +351,6 @@
             border-radius: 30px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 1.3rem;
         }
 
         .action-buttons {
@@ -178,11 +369,6 @@
             cursor: pointer;
             flex: 1;
             text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            min-height: 48px;
         }
 
         .btn-primary { background: #2c7da0; color: white; }
@@ -205,176 +391,21 @@
         .receipt-paper .receipt-header {
             text-align: center;
             margin-bottom: 12px;
-            padding-bottom: 10px;
             border-bottom: 2px dashed #aaa;
         }
 
-        .receipt-paper .receipt-title {
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
+        .receipt-paper .receipt-title { font-size: 18px; font-weight: bold; }
+        .receipt-paper .store-name { font-size: 13px; font-weight: 600; }
+        .receipt-paper .receipt-items { width: 100%; margin: 10px 0; border-collapse: collapse; font-size: 9px; }
+        .receipt-paper .receipt-items th, .receipt-paper .receipt-items td { padding: 6px 2px; border-bottom: 1px dotted #ccc; text-align: left; }
+        .total-row { margin-top: 12px; text-align: right; border-top: 2px dashed #333; padding-top: 8px; }
+        .footer-note { margin-top: 12px; text-align: center; font-size: 8px; border-top: 1px dashed #bbb; padding-top: 8px; }
 
-        .receipt-paper .store-name {
-            font-size: 13px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
+        .history-list { max-height: 320px; overflow-y: auto; }
+        .history-item { background: #f8fafd; border-radius: 20px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-left: 4px solid #2c7da0; }
+        .load-history-btn, .delete-history-btn { background: #2c7da0; color: white; border: none; padding: 6px 12px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; }
+        .delete-history-btn { background: #e07c6c; }
 
-        .receipt-paper .receipt-details {
-            margin: 10px 0;
-            font-size: 9px;
-            line-height: 1.5;
-        }
-
-        .receipt-paper .receipt-details div {
-            margin-bottom: 3px;
-        }
-
-        .receipt-paper .receipt-items {
-            width: 100%;
-            margin: 10px 0;
-            border-collapse: collapse;
-            font-size: 9px;
-        }
-
-        .receipt-paper .receipt-items th,
-        .receipt-paper .receipt-items td {
-            text-align: left;
-            padding: 6px 2px;
-            border-bottom: 1px dotted #ccc;
-        }
-
-        .receipt-paper .receipt-items th {
-            border-bottom: 2px dotted #999;
-            font-weight: bold;
-            font-size: 9px;
-        }
-
-        .receipt-paper .total-row {
-            margin-top: 12px;
-            text-align: right;
-            border-top: 2px dashed #333;
-            padding-top: 8px;
-            font-size: 10px;
-        }
-
-        .receipt-paper .total-row div {
-            margin-bottom: 3px;
-        }
-
-        .receipt-paper .footer-note {
-            margin-top: 12px;
-            text-align: center;
-            font-size: 8px;
-            border-top: 1px dashed #bbb;
-            padding-top: 8px;
-            color: #666;
-        }
-
-        .history-toolbar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .sort-btn {
-            background: #e2e8f0;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 0.8rem;
-        }
-
-        .sort-btn.active {
-            background: #2c7da0;
-            color: white;
-        }
-
-        .clear-all-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .history-list {
-            max-height: 320px;
-            overflow-y: auto;
-        }
-
-        .history-item {
-            background: #f8fafd;
-            border-radius: 20px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            border-left: 4px solid #2c7da0;
-        }
-
-        .history-info {
-            flex: 3;
-            font-size: 0.85rem;
-        }
-
-        .history-store {
-            font-weight: bold;
-            color: #1e4663;
-        }
-
-        .history-date {
-            font-size: 0.7rem;
-            color: #5f6c7a;
-        }
-
-        .history-total {
-            font-weight: bold;
-            color: #2c7da0;
-        }
-
-        .history-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .load-history-btn, .delete-history-btn {
-            background: none;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .load-history-btn {
-            background: #2c7da0;
-            color: white;
-        }
-
-        .delete-history-btn {
-            background: #e07c6c;
-            color: white;
-        }
-
-        .empty-history {
-            text-align: center;
-            color: #8ba0b5;
-            padding: 30px;
-        }
-
-        /* Keep PDF generation clean - no print styles interference */
         .toast-msg {
             position: fixed;
             bottom: 25px;
@@ -384,78 +415,62 @@
             color: white;
             padding: 10px 20px;
             border-radius: 50px;
-            font-size: 0.85rem;
             z-index: 1000;
             opacity: 0;
             transition: opacity 0.25s;
             pointer-events: none;
-            text-align: center;
-            white-space: nowrap;
         }
 
         @media (max-width: 768px) {
-            .toast-msg { white-space: normal; max-width: 85vw; }
-            .history-item { flex-direction: column; align-items: stretch; }
-            .history-actions { justify-content: flex-end; }
-            .receipt-paper {
-                padding: 10px 8px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .receipt-paper {
-                font-size: 10px;
-            }
-            .receipt-paper .receipt-title {
-                font-size: 16px;
-            }
-            .receipt-paper .receipt-items th,
-            .receipt-paper .receipt-items td {
-                padding: 4px 2px;
-            }
-        }
-        
-        /* Paper size hint text */
-        .paper-hint {
-            font-size: 0.7rem;
-            color: #5b7a95;
-            margin-top: 8px;
-            text-align: center;
+            .history-item { flex-direction: column; }
+            .saved-list { max-height: 120px; overflow-y: auto; }
         }
     </style>
 </head>
 <body>
 <div class="app-container">
+    <!-- Multi-Pages Section: each page has its own fill data -->
+    <div class="pages-section">
+        <div class="pages-header">
+            <h2>📑 Workspace Pages <span style="font-size:0.8rem;">(Multiple Fill States)</span></h2>
+            <button class="add-page-btn" id="globalAddPageBtn">+ New Page</button>
+        </div>
+        <div id="pageTabsContainer" class="page-tabs"></div>
+    </div>
+
     <div class="main-grid">
-        <div class="input-card">
-            <h2>📄 Receipt Builder</h2>
+        <div class="input-card" id="mainInputCard">
+            <h2>📄 Active Page Editor</h2>
+            <!-- Dynamic saved info bars will be injected per field (store, customer, title, note) -->
+            <div id="savedBarsContainer"></div>
+
             <div class="form-group">
-                <label>🏢 Store Name</label>
-                <input type="text" id="storeName" placeholder="Store Name" value="Sunshine Mart">
+                <label>🏢 Store Name <span style="font-weight:normal;">(click saved icon)</span></label>
+                <input type="text" id="storeName" placeholder="Store Name">
             </div>
             <div class="form-group">
                 <label>📞 Contact</label>
-                <input type="text" id="storeContact" placeholder="Phone/Email" value="+1 234 567 890">
+                <input type="text" id="storeContact" placeholder="Phone/Email">
             </div>
             <div class="form-group">
                 <label>🧾 Receipt Title</label>
-                <input type="text" id="receiptTitle" placeholder="Title" value="SALES RECEIPT">
+                <input type="text" id="receiptTitle" placeholder="Title">
             </div>
             <div class="form-group">
                 <label>👤 Customer Name</label>
-                <input type="text" id="customerName" placeholder="Customer" value="Walk-in Customer">
+                <input type="text" id="customerName" placeholder="Customer">
             </div>
             <div class="form-group">
                 <label>📅 Date</label>
                 <input type="date" id="receiptDate">
             </div>
             <div class="form-group">
-                <label>📄 PDF Paper Size (A3/A4/A5/Letter)</label>
-                <select id="paperSize" class="paper-size-select">
-                    <option value="A3">A3 (297x420mm) - Large</option>
-                    <option value="A4">A4 (210x297mm) - Standard</option>
-                    <option value="A5">A5 (148x210mm) - Compact</option>
-                    <option value="Letter">Letter (8.5x11in)</option>
+                <label>📄 PDF Paper Size</label>
+                <select id="paperSize">
+                    <option value="A3">A3 (297x420mm)</option>
+                    <option value="A4">A4 (210x297mm)</option>
+                    <option value="A5">A5 (148x210mm)</option>
+                    <option value="Letter">Letter</option>
                 </select>
             </div>
 
@@ -482,122 +497,244 @@
         <div class="preview-card">
             <h3>🧾 Receipt Preview</h3>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
-            <p class="paper-hint">* PDF will match selected paper size (A3/A4/A5/Letter)</p>
         </div>
     </div>
 
     <div class="history-card">
         <h2>📜 Receipt History</h2>
-        <div class="history-toolbar">
+        <div class="history-toolbar" style="display:flex; gap:12px; margin-bottom:16px;">
             <button class="sort-btn" data-sort="date">📅 Sort by Date</button>
             <button class="sort-btn" data-sort="name">🔤 Sort by Store</button>
             <button class="sort-btn" data-sort="total">💰 Sort by Total</button>
-            <button class="clear-all-btn" id="clearAllHistoryBtn">🗑️ Clear All</button>
+            <button class="clear-all-btn" id="clearAllHistoryBtn" style="background:#dc2626; color:white; border:none; padding:8px 16px; border-radius:40px;">🗑️ Clear All</button>
         </div>
-        <div id="historyList" class="history-list">
-            <div class="empty-history">No saved receipts yet. Create and save!</div>
-        </div>
+        <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet.</div></div>
     </div>
 </div>
-
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    let itemsArray = [
-        { name: "Organic Apples", quantity: 2, price: 1.99 },
-        { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }
-    ];
-    
-    let receiptHistory = [];
-    let currentSort = "date";
+    // -------- MULTI-PAGE STATE ----------
+    let pages = []; // each page: { id, name, formData, itemsArray }
+    let activePageId = null;
 
-    function loadHistoryFromStorage() {
-        const stored = localStorage.getItem("receiptHistory");
-        if (stored) {
-            try {
-                receiptHistory = JSON.parse(stored);
-            } catch(e) { receiptHistory = []; }
+    // Saved information library (global per field type)
+    let savedStoreNames = JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Market", "Tech Hub"]');
+    let savedCustomerNames = JSON.parse(localStorage.getItem("saved_customer_names") || '["Walk-in Customer", "John Doe", "Alice Brown"]');
+    let savedReceiptTitles = JSON.parse(localStorage.getItem("saved_receipt_titles") || '["SALES RECEIPT", "TAX INVOICE", "PURCHASE ORDER"]');
+    let savedFooterNotes = JSON.parse(localStorage.getItem("saved_footer_notes") || '["Thank you for shopping!", "Come again!", "Have a great day"]');
+
+    function saveSavedDataToLocal() {
+        localStorage.setItem("saved_store_names", JSON.stringify(savedStoreNames));
+        localStorage.setItem("saved_customer_names", JSON.stringify(savedCustomerNames));
+        localStorage.setItem("saved_receipt_titles", JSON.stringify(savedReceiptTitles));
+        localStorage.setItem("saved_footer_notes", JSON.stringify(savedFooterNotes));
+    }
+
+    // Helper: render saved bars for each relevant field
+    function renderSavedBars() {
+        const container = document.getElementById('savedBarsContainer');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="saved-info-group">
+                <div class="saved-header"><label>📌 Saved Store Names</label><span style="font-size:12px;">(click to fill / ✕ to delete)</span></div>
+                <div class="saved-list" id="savedStoreList"></div>
+                <div class="add-saved-input"><input type="text" id="newStoreValue" placeholder="New store name"><button class="small-btn" id="addStoreBtn">+ Save</button></div>
+            </div>
+            <div class="saved-info-group">
+                <div class="saved-header"><label>👤 Saved Customer Names</label></div>
+                <div class="saved-list" id="savedCustomerList"></div>
+                <div class="add-saved-input"><input type="text" id="newCustomerValue" placeholder="New customer"><button class="small-btn" id="addCustomerBtn">+ Save</button></div>
+            </div>
+            <div class="saved-info-group">
+                <div class="saved-header"><label>🏷️ Saved Receipt Titles</label></div>
+                <div class="saved-list" id="savedTitleList"></div>
+                <div class="add-saved-input"><input type="text" id="newTitleValue" placeholder="New title"><button class="small-btn" id="addTitleBtn">+ Save</button></div>
+            </div>
+            <div class="saved-info-group">
+                <div class="saved-header"><label>📝 Saved Footer Notes</label></div>
+                <div class="saved-list" id="savedNoteList"></div>
+                <div class="add-saved-input"><input type="text" id="newNoteValue" placeholder="New note"><button class="small-btn" id="addNoteBtn">+ Save</button></div>
+            </div>
+        `;
+
+        function buildList(arr, listId, onClickFill, onDelete) {
+            const listDiv = document.getElementById(listId);
+            if (!listDiv) return;
+            listDiv.innerHTML = arr.map((val, idx) => `
+                <div class="saved-badge">
+                    <span class="saved-value">${escapeHtml(val)}</span>
+                    <button class="delete-saved" data-idx="${idx}" data-type="${listId}">✕</button>
+                </div>
+            `).join('');
+            listDiv.querySelectorAll('.saved-badge .saved-value').forEach((span, idx) => {
+                span.parentElement.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-saved')) return;
+                    onClickFill(arr[idx]);
+                });
+            });
+            listDiv.querySelectorAll('.delete-saved').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(btn.getAttribute('data-idx'));
+                    onDelete(idx);
+                });
+            });
         }
-        if (!receiptHistory.length) receiptHistory = [];
-        renderHistoryList();
+
+        buildList(savedStoreNames, 'savedStoreList', (val) => { document.getElementById('storeName').value = val; updateReceiptDisplay(); showToast(`Filled: ${val}`, 1000); }, (idx) => { savedStoreNames.splice(idx,1); saveSavedDataToLocal(); renderSavedBars(); showToast("Deleted saved store",800); });
+        buildList(savedCustomerNames, 'savedCustomerList', (val) => { document.getElementById('customerName').value = val; updateReceiptDisplay(); }, (idx) => { savedCustomerNames.splice(idx,1); saveSavedDataToLocal(); renderSavedBars(); });
+        buildList(savedReceiptTitles, 'savedTitleList', (val) => { document.getElementById('receiptTitle').value = val; updateReceiptDisplay(); }, (idx) => { savedReceiptTitles.splice(idx,1); saveSavedDataToLocal(); renderSavedBars(); });
+        buildList(savedFooterNotes, 'savedNoteList', (val) => { document.getElementById('extraNote').value = val; updateReceiptDisplay(); }, (idx) => { savedFooterNotes.splice(idx,1); saveSavedDataToLocal(); renderSavedBars(); });
+
+        document.getElementById('addStoreBtn')?.addEventListener('click', () => { let v = document.getElementById('newStoreValue')?.value.trim(); if(v) { savedStoreNames.unshift(v); saveSavedDataToLocal(); renderSavedBars(); document.getElementById('newStoreValue').value=''; showToast("Saved new store",800); } });
+        document.getElementById('addCustomerBtn')?.addEventListener('click', () => { let v = document.getElementById('newCustomerValue')?.value.trim(); if(v) { savedCustomerNames.unshift(v); saveSavedDataToLocal(); renderSavedBars(); document.getElementById('newCustomerValue').value=''; } });
+        document.getElementById('addTitleBtn')?.addEventListener('click', () => { let v = document.getElementById('newTitleValue')?.value.trim(); if(v) { savedReceiptTitles.unshift(v); saveSavedDataToLocal(); renderSavedBars(); document.getElementById('newTitleValue').value=''; } });
+        document.getElementById('addNoteBtn')?.addEventListener('click', () => { let v = document.getElementById('newNoteValue')?.value.trim(); if(v) { savedFooterNotes.unshift(v); saveSavedDataToLocal(); renderSavedBars(); document.getElementById('newNoteValue').value=''; } });
     }
 
-    function saveHistoryToStorage() {
-        localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory));
+    // Helper functions for multi-page
+    function createNewPage() {
+        const newId = Date.now();
+        const pageNum = pages.length+1;
+        const newPage = {
+            id: newId,
+            name: `Page ${pageNum}`,
+            formData: {
+                storeName: "New Store", storeContact: "", receiptTitle: "RECEIPT", customerName: "Guest",
+                dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you!", paperSize: "A4"
+            },
+            itemsArray: [{ name: "Sample Item", quantity: 1, price: 9.99 }]
+        };
+        pages.push(newPage);
+        activePageId = newId;
+        renderPageTabs();
+        loadPageToUI(newPage);
+        updateReceiptDisplay();
+        showToast(`📄 New page "${newPage.name}" created`, 1000);
     }
 
-    function showToast(message, duration = 2000) {
-        const toast = document.getElementById('toastMsg');
-        toast.textContent = message;
-        toast.style.opacity = '1';
-        setTimeout(() => toast.style.opacity = '0', duration);
+    function loadPageToUI(page) {
+        if (!page) return;
+        document.getElementById('storeName').value = page.formData.storeName || "";
+        document.getElementById('storeContact').value = page.formData.storeContact || "";
+        document.getElementById('receiptTitle').value = page.formData.receiptTitle || "";
+        document.getElementById('customerName').value = page.formData.customerName || "";
+        document.getElementById('receiptDate').value = page.formData.dateVal || new Date().toISOString().split('T')[0];
+        document.getElementById('extraNote').value = page.formData.extraNote || "";
+        document.getElementById('paperSize').value = page.formData.paperSize || "A4";
+        window.itemsArray = page.itemsArray.map(i => ({...i}));
+        renderItemRows();
+        updateReceiptDisplay();
     }
 
-    function setDefaultDate() {
-        const dateInput = document.getElementById('receiptDate');
-        if (!dateInput.value) {
-            dateInput.value = new Date().toISOString().split('T')[0];
+    function saveCurrentPageData() {
+        if (!activePageId) return;
+        const page = pages.find(p => p.id === activePageId);
+        if (page) {
+            page.formData = {
+                storeName: document.getElementById('storeName').value,
+                storeContact: document.getElementById('storeContact').value,
+                receiptTitle: document.getElementById('receiptTitle').value,
+                customerName: document.getElementById('customerName').value,
+                dateVal: document.getElementById('receiptDate').value,
+                extraNote: document.getElementById('extraNote').value,
+                paperSize: document.getElementById('paperSize').value
+            };
+            page.itemsArray = JSON.parse(JSON.stringify(window.itemsArray));
         }
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+    function renderPageTabs() {
+        const container = document.getElementById('pageTabsContainer');
+        if (!container) return;
+        if (pages.length === 0) {
+            container.innerHTML = '<span style="color:#7f8c8d;">No pages, click + New Page</span>';
+            return;
+        }
+        container.innerHTML = pages.map(p => `
+            <div class="page-tab ${activePageId === p.id ? 'active' : ''}" data-id="${p.id}">
+                <span class="page-name">📄 ${escapeHtml(p.name)}</span>
+                <span class="delete-page" data-id="${p.id}">✕</span>
+            </div>
+        `).join('');
+        container.querySelectorAll('.page-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-page')) return;
+                const pid = parseInt(tab.getAttribute('data-id'));
+                saveCurrentPageData();
+                activePageId = pid;
+                const targetPage = pages.find(p => p.id === pid);
+                if (targetPage) loadPageToUI(targetPage);
+                renderPageTabs();
+                updateReceiptDisplay();
+            });
+            const delBtn = tab.querySelector('.delete-page');
+            if (delBtn) {
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pid = parseInt(delBtn.getAttribute('data-id'));
+                    if (pages.length === 1) { showToast("At least one page required", 1000); return; }
+                    pages = pages.filter(p => p.id !== pid);
+                    if (activePageId === pid) {
+                        activePageId = pages[0]?.id || null;
+                        if (activePageId) loadPageToUI(pages[0]);
+                        else createNewPage();
+                    }
+                    renderPageTabs();
+                    if (activePageId) {
+                        const curr = pages.find(p => p.id === activePageId);
+                        if (curr) loadPageToUI(curr);
+                    }
+                    updateReceiptDisplay();
+                    showToast("Page deleted",800);
+                });
+            }
         });
     }
 
+    // Items management
+    let itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Bread", quantity: 1, price: 3.49 }];
+    window.itemsArray = itemsArray;
     function renderItemRows() {
         const container = document.getElementById('itemsContainer');
         if (!container) return;
         container.innerHTML = '';
         itemsArray.forEach((item, idx) => {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'item-row';
-            rowDiv.innerHTML = `
-                <input type="text" class="item-name" placeholder="Item" value="${escapeHtml(item.name)}">
-                <input type="number" class="item-qty" placeholder="Qty" value="${item.quantity}" step="1" min="1">
-                <input type="number" class="item-price" placeholder="Price" value="${item.price}" step="0.01" min="0">
-                <button type="button" class="remove-item" data-idx="${idx}">✕</button>
+            const row = document.createElement('div'); row.className = 'item-row';
+            row.innerHTML = `
+                <input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item">
+                <input type="number" class="item-qty" value="${item.quantity}" step="1" min="1">
+                <input type="number" class="item-price" value="${item.price}" step="0.01" min="0">
+                <button class="remove-item" data-idx="${idx}">✕</button>
             `;
-            container.appendChild(rowDiv);
+            container.appendChild(row);
         });
         document.querySelectorAll('.remove-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-idx'));
-                if (!isNaN(idx)) {
-                    itemsArray.splice(idx, 1);
-                    renderItemRows();
-                    updateReceiptDisplay();
-                    showToast("Item removed", 1000);
-                }
+                if (!isNaN(idx)) { itemsArray.splice(idx,1); renderItemRows(); updateReceiptDisplay(); showToast("Item removed",800); saveCurrentPageData(); }
             });
         });
-        attachItemInputEvents();
+        attachItemEvents();
     }
-
-    function attachItemInputEvents() {
-        const rows = document.querySelectorAll('.item-row');
-        rows.forEach((row, idx) => {
-            const nameInput = row.querySelector('.item-name');
-            const qtyInput = row.querySelector('.item-qty');
-            const priceInput = row.querySelector('.item-price');
+    function attachItemEvents() {
+        document.querySelectorAll('.item-row').forEach((row, idx) => {
+            const nameInp = row.querySelector('.item-name');
+            const qtyInp = row.querySelector('.item-qty');
+            const priceInp = row.querySelector('.item-price');
             const update = () => {
                 if (itemsArray[idx]) {
-                    itemsArray[idx].name = nameInput?.value || itemsArray[idx].name;
-                    let qty = parseFloat(qtyInput?.value);
-                    itemsArray[idx].quantity = isNaN(qty) ? 1 : Math.max(1, qty);
-                    let price = parseFloat(priceInput?.value);
-                    itemsArray[idx].price = isNaN(price) ? 0 : price;
+                    itemsArray[idx].name = nameInp?.value || "";
+                    itemsArray[idx].quantity = parseFloat(qtyInp?.value) || 1;
+                    itemsArray[idx].price = parseFloat(priceInp?.value) || 0;
                     updateReceiptDisplay();
+                    saveCurrentPageData();
                 }
             };
-            nameInput?.addEventListener('input', update);
-            qtyInput?.addEventListener('input', update);
-            priceInput?.addEventListener('input', update);
+            nameInp?.addEventListener('input', update);
+            qtyInp?.addEventListener('input', update);
+            priceInp?.addEventListener('input', update);
         });
     }
 
@@ -606,302 +743,58 @@
         const storeContact = document.getElementById('storeContact')?.value || "";
         const receiptTitle = document.getElementById('receiptTitle')?.value || "RECEIPT";
         const customerName = document.getElementById('customerName')?.value || "Guest";
-        let dateVal = document.getElementById('receiptDate')?.value;
-        if (!dateVal) dateVal = new Date().toISOString().split('T')[0];
+        const dateVal = document.getElementById('receiptDate')?.value || new Date().toISOString().split('T')[0];
         const extraNote = document.getElementById('extraNote')?.value || "";
-        
         let subtotal = 0;
-        const itemsCopy = [];
-        for (let item of itemsArray) {
+        const itemsCopy = itemsArray.map(item => {
             const qty = parseFloat(item.quantity) || 0;
             const price = parseFloat(item.price) || 0;
             const total = qty * price;
             subtotal += total;
-            itemsCopy.push({ ...item, quantity: qty, price: price, total: total });
-        }
+            return { ...item, quantity: qty, price, total };
+        });
         const grandTotal = subtotal;
-        const receiptId = 'RCPT-' + Date.now().toString().slice(-6);
-        
-        return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal, receiptId, timestamp: Date.now() };
+        return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() };
     }
-
     function generateReceiptHTMLFromData(data) {
-        const { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items, subtotal, grandTotal, receiptId } = data;
-        let itemsHtml = '';
-        for (let item of items) {
-            const qty = item.quantity;
-            const price = item.price;
-            const total = qty * price;
-            itemsHtml += `<tr><td class="item-name-col">${escapeHtml(item.name)}</td><td style="text-align:center">${qty}</td><td style="text-align:right">$${price.toFixed(2)}</td><td style="text-align:right">$${total.toFixed(2)}</td></tr>`;
-        }
-        if (items.length === 0) itemsHtml = '<tr><td colspan="4" style="text-align:center">— No items —</td></tr>';
-        
-        return `
-            <div class="receipt-header">
-                <div class="receipt-title">${escapeHtml(storeName.toUpperCase())}</div>
-                <div class="store-name">${escapeHtml(receiptTitle)}</div>
-                <div style="font-size:8px;">${escapeHtml(storeContact)}</div>
-            </div>
-            <div class="receipt-details">
-                <div><strong>Date:</strong> ${escapeHtml(dateVal)}</div>
-                <div><strong>Customer:</strong> ${escapeHtml(customerName)}</div>
-                <div><strong>Receipt ID:</strong> ${escapeHtml(receiptId)}</div>
-            </div>
-            <table class="receipt-items">
-                <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-                <tbody>${itemsHtml}</tbody>
-            </table>
-            <div class="total-row">
-                <div>Subtotal: $${subtotal.toFixed(2)}</div>
-                <div><strong>TOTAL: $${grandTotal.toFixed(2)}</strong></div>
-            </div>
-            <div class="footer-note">
-                ${extraNote ? escapeHtml(extraNote) : "Thank you for your purchase!"}<br>
-                * Digital Receipt *
-            </div>
-        `;
+        let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join('');
+        if (!data.items.length) itemsHtml = '<tr><td colspan="4">— No items —</td></tr>';
+        return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div class="store-name">${escapeHtml(data.receiptTitle)}</div><div style="font-size:8px;">${escapeHtml(data.storeContact)}</div></div>
+        <div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><strong>ID:</strong> ${escapeHtml(data.receiptId)}</div>
+        <table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table>
+        <div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div>
+        <div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`;
     }
+    function updateReceiptDisplay() { document.getElementById('receiptPreviewContainer').innerHTML = generateReceiptHTMLFromData(getCurrentReceiptData()); }
 
-    function generateCurrentReceiptHTML() {
-        const data = getCurrentReceiptData();
-        return generateReceiptHTMLFromData(data);
-    }
-
-    function updateReceiptDisplay() {
-        const previewContainer = document.getElementById('receiptPreviewContainer');
-        if (previewContainer) {
-            previewContainer.innerHTML = generateCurrentReceiptHTML();
-        }
-    }
-
-    function syncItemsFromDOM() {
-        const rows = document.querySelectorAll('.item-row');
-        const newItems = [];
-        rows.forEach(row => {
-            const name = row.querySelector('.item-name')?.value || '';
-            let qty = parseFloat(row.querySelector('.item-qty')?.value);
-            if (isNaN(qty)) qty = 1;
-            let price = parseFloat(row.querySelector('.item-price')?.value);
-            if (isNaN(price)) price = 0;
-            newItems.push({ name, quantity: qty, price });
-        });
-        if (newItems.length) itemsArray = newItems;
-    }
-
-    // PDF download ONLY (no print features)
-    async function downloadReceiptAsPDF() {
-        syncItemsFromDOM();
-        updateReceiptDisplay();
-        
-        // Get the preview element which contains current receipt
-        const element = document.getElementById('receiptPreviewContainer');
-        if (!element) return;
-        
-        const paperSize = document.getElementById('paperSize').value;
-        let pdfFormat = 'a4';
-        if (paperSize === 'A3') pdfFormat = 'a3';
-        else if (paperSize === 'A4') pdfFormat = 'a4';
-        else if (paperSize === 'A5') pdfFormat = 'a5';
-        else if (paperSize === 'Letter') pdfFormat = 'letter';
-        
-        // Temporarily store original styles to ensure PDF captures proper layout
-        const originalWidth = element.style.width;
-        const originalMaxWidth = element.style.maxWidth;
-        const originalBoxShadow = element.style.boxShadow;
-        
-        // Enhance PDF appearance: ensure consistent width for the chosen paper
-        if (paperSize === 'A3') {
-            element.style.width = '270mm';
-            element.style.maxWidth = '270mm';
-        } else if (paperSize === 'A4') {
-            element.style.width = '190mm';
-            element.style.maxWidth = '190mm';
-        } else if (paperSize === 'A5') {
-            element.style.width = '130mm';
-            element.style.maxWidth = '130mm';
-        } else if (paperSize === 'Letter') {
-            element.style.width = '200mm';
-            element.style.maxWidth = '200mm';
-        }
-        element.style.boxShadow = 'none';
-        
-        const opt = {
-            margin: [8, 8, 8, 8],
-            filename: `receipt_${Date.now()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2.5, letterRendering: true, useCORS: false },
-            jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' }
-        };
-        
-        try {
-            // Use html2pdf bundle directly
-            await html2pdf().set(opt).from(element).save();
-            showToast(`✅ PDF saved (${paperSize})`, 2200);
-        } catch (err) {
-            console.error("PDF Error:", err);
-            showToast("❌ PDF generation failed", 2000);
-        } finally {
-            // Restore original styles
-            element.style.width = originalWidth;
-            element.style.maxWidth = originalMaxWidth || '';
-            element.style.boxShadow = originalBoxShadow;
-        }
-    }
-
-    function saveToHistory() {
-        syncItemsFromDOM();
-        const data = getCurrentReceiptData();
-        // Ensure items have proper structure
-        const historyEntry = {
-            id: Date.now(),
-            storeName: data.storeName,
-            customerName: data.customerName,
-            date: data.dateVal,
-            total: data.grandTotal,
-            timestamp: data.timestamp,
-            fullData: data,
-            receiptHTML: generateReceiptHTMLFromData(data)
-        };
-        receiptHistory.unshift(historyEntry);
-        // Limit history to 50 items to keep performance
-        if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0, 50);
-        saveHistoryToStorage();
-        renderHistoryList();
-        showToast("💾 Receipt saved to history!", 1500);
-    }
-
-    function renderHistoryList() {
-        const container = document.getElementById('historyList');
-        if (!container) return;
-        
-        let sorted = [...receiptHistory];
-        if (currentSort === 'date') sorted.sort((a,b) => b.timestamp - a.timestamp);
-        else if (currentSort === 'name') sorted.sort((a,b) => a.storeName.localeCompare(b.storeName));
-        else if (currentSort === 'total') sorted.sort((a,b) => b.total - a.total);
-        
-        if (sorted.length === 0) {
-            container.innerHTML = '<div class="empty-history">✨ No saved receipts. Create and save!</div>';
-            return;
-        }
-        
-        container.innerHTML = sorted.map(entry => `
-            <div class="history-item" data-id="${entry.id}">
-                <div class="history-info">
-                    <div class="history-store">🏪 ${escapeHtml(entry.storeName)}</div>
-                    <div class="history-date">📅 ${escapeHtml(entry.date)} | 👤 ${escapeHtml(entry.customerName)}</div>
-                    <div class="history-total">💰 Total: $${entry.total.toFixed(2)}</div>
-                </div>
-                <div class="history-actions">
-                    <button class="load-history-btn" data-id="${entry.id}">📋 Load</button>
-                    <button class="delete-history-btn" data-id="${entry.id}">🗑️ Delete</button>
-                </div>
-            </div>
-        `).join('');
-        
-        document.querySelectorAll('.load-history-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                loadHistoryEntry(id);
-            });
-        });
-        document.querySelectorAll('.delete-history-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = parseInt(btn.getAttribute('data-id'));
-                deleteHistoryEntry(id);
-            });
-        });
-    }
-    
-    function loadHistoryEntry(id) {
-        const entry = receiptHistory.find(e => e.id === id);
-        if (!entry) return;
-        const data = entry.fullData;
-        document.getElementById('storeName').value = data.storeName;
-        document.getElementById('storeContact').value = data.storeContact;
-        document.getElementById('receiptTitle').value = data.receiptTitle;
-        document.getElementById('customerName').value = data.customerName;
-        document.getElementById('receiptDate').value = data.dateVal;
-        document.getElementById('extraNote').value = data.extraNote;
-        itemsArray = data.items.map(item => ({ name: item.name, quantity: item.quantity, price: item.price }));
-        renderItemRows();
-        updateReceiptDisplay();
-        showToast(`📋 Loaded: ${data.storeName}`, 1500);
-    }
-    
-    function deleteHistoryEntry(id) {
-        receiptHistory = receiptHistory.filter(e => e.id !== id);
-        saveHistoryToStorage();
-        renderHistoryList();
-        showToast("🗑️ Deleted from history", 1000);
-    }
-    
-    function clearAllHistory() {
-        if (confirm("⚠️ Delete ALL saved receipts permanently?")) {
-            receiptHistory = [];
-            saveHistoryToStorage();
-            renderHistoryList();
-            showToast("All history cleared", 1200);
-        }
-    }
-    
-    function setupSorting() {
-        const sortBtns = document.querySelectorAll('.sort-btn');
-        sortBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sortBy = btn.getAttribute('data-sort');
-                currentSort = sortBy;
-                renderHistoryList();
-                sortBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-        document.getElementById('clearAllHistoryBtn')?.addEventListener('click', clearAllHistory);
-        // Default active sort by date
-        const defaultSortBtn = document.querySelector('.sort-btn[data-sort="date"]');
-        if (defaultSortBtn) defaultSortBtn.classList.add('active');
-    }
+    // History storage
+    let receiptHistory = [];
+    function loadHistoryFromStorage() { const stored = localStorage.getItem("receiptHistory"); if(stored) receiptHistory = JSON.parse(stored); renderHistoryList(); }
+    function saveHistoryToStorage() { localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory)); }
+    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data, receiptHTML: generateReceiptHTMLFromData(data) }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryToStorage(); renderHistoryList(); showToast("💾 Saved to history",1200); }
+    function renderHistoryList() { const container = document.getElementById('historyList'); if(!container) return; if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">No saved receipts.</div>'; return; } container.innerHTML = receiptHistory.map(entry => `<div class="history-item"><div><div class="history-store">🏪 ${escapeHtml(entry.storeName)}</div><div>📅 ${entry.date} | 👤 ${escapeHtml(entry.customerName)}</div><div>💰 $${entry.total.toFixed(2)}</div></div><div><button class="load-history-btn" data-id="${entry.id}">Load</button><button class="delete-history-btn" data-id="${entry.id}">Delete</button></div></div>`).join(''); document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',(e)=>{const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(e=>e.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Loaded from history",1000); }})); document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',(e)=>{const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(e=>e.id!==id); saveHistoryToStorage(); renderHistoryList(); showToast("Deleted",800);})); }
+    function clearAllHistory() { if(confirm("Clear all history?")){ receiptHistory=[]; saveHistoryToStorage(); renderHistoryList(); showToast("History cleared",1000); } }
+    async function downloadReceiptAsPDF() { const element = document.getElementById('receiptPreviewContainer'); const paperSize = document.getElementById('paperSize').value; let pdfFormat = 'a4'; if (paperSize === 'A3') pdfFormat='a3'; else if(paperSize==='A5') pdfFormat='a5'; else if(paperSize==='Letter') pdfFormat='letter'; const originalWidth = element.style.width; element.style.width = (paperSize==='A3'?'270mm':paperSize==='A4'?'190mm':paperSize==='A5'?'130mm':'200mm'); await html2pdf().set({margin:[8,8,8,8], filename:`receipt_${Date.now()}.pdf`, html2canvas:{scale:2.5}, jsPDF:{unit:'mm', format:pdfFormat, orientation:'portrait'}}).from(element).save(); element.style.width = originalWidth; showToast(`PDF saved (${paperSize})`,2000); }
 
     function init() {
-        setDefaultDate();
+        if(pages.length===0){ const defaultPage = { id: Date.now(), name: "Page 1", formData: { storeName: "Sunshine Mart", storeContact: "+1 234 567 890", receiptTitle: "SALES RECEIPT", customerName: "Walk-in Customer", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you for your purchase!", paperSize: "A4" }, itemsArray: [{ name:"Organic Apples", quantity:2, price:1.99 }, { name:"Bread", quantity:1, price:3.49 }] }; pages.push(defaultPage); activePageId = defaultPage.id; }
+        renderSavedBars();
+        loadPageToUI(pages.find(p=>p.id===activePageId));
+        renderPageTabs();
         renderItemRows();
         updateReceiptDisplay();
         loadHistoryFromStorage();
-        setupSorting();
-        
-        // Refresh button: sync items, re-render, update preview
-        document.getElementById('updateReceiptBtn')?.addEventListener('click', () => {
-            syncItemsFromDOM();
-            renderItemRows();  // ensures DOM items match array
-            updateReceiptDisplay();
-            showToast("🔄 Receipt refreshed", 900);
-        });
-        
-        // PDF save only
-        document.getElementById('savePdfBtn')?.addEventListener('click', downloadReceiptAsPDF);
-        
-        // Save to history
-        document.getElementById('saveToHistoryBtn')?.addEventListener('click', saveToHistory);
-        
-        // Add new item
-        document.getElementById('addItemBtn')?.addEventListener('click', () => {
-            itemsArray.push({ name: "New Item", quantity: 1, price: 0.00 });
-            renderItemRows();
-            updateReceiptDisplay();
-            showToast("➕ Item added", 900);
-        });
-        
-        // Live preview updates for all text inputs
-        ['storeName', 'storeContact', 'receiptTitle', 'customerName', 'receiptDate', 'extraNote'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('input', () => updateReceiptDisplay());
-        });
-        // Also listen to paper size changes (visual preview unaffected, but user sees same receipt)
-        document.getElementById('paperSize')?.addEventListener('change', () => {
-            // Just a subtle hint, no functional change in preview
-            showToast(`PDF paper size set to ${document.getElementById('paperSize').value}`, 1000);
-        });
+        document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name:"New item", quantity:1, price:0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item added",800); };
+        document.getElementById('updateReceiptBtn').onclick = () => { syncItemsFromDOM(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Refreshed",800); };
+        document.getElementById('savePdfBtn').onclick = downloadReceiptAsPDF;
+        document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
+        document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
+        document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
+        ['storeName','storeContact','receiptTitle','customerName','receiptDate','extraNote','paperSize'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',()=>{ updateReceiptDisplay(); saveCurrentPageData(); }); });
+        function syncItemsFromDOM() { const rows = document.querySelectorAll('.item-row'); const newItems = []; rows.forEach(row=>{ const name=row.querySelector('.item-name')?.value||''; let qty=parseFloat(row.querySelector('.item-qty')?.value||1); let price=parseFloat(row.querySelector('.item-price')?.value||0); newItems.push({name, quantity:isNaN(qty)?1:qty, price:isNaN(price)?0:price}); }); if(newItems.length) itemsArray = newItems; }
     }
-    
+    function showToast(msg, dur=1800){ const t=document.getElementById('toastMsg'); t.textContent=msg; t.style.opacity='1'; setTimeout(()=>t.style.opacity='0', dur); }
+    function escapeHtml(str){ if(!str) return ''; return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     init();
 </script>
 </body>
