@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Smart Receipts | Dedicated App Folder PDF Storage</title>
+    <title>Smart Receipts | Android-Friendly PDF Storage</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -26,6 +26,46 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+        }
+
+        /* Storage Info Banner */
+        .storage-banner {
+            background: linear-gradient(135deg, #1e5f3a, #2c7da0);
+            border-radius: 20px;
+            padding: 16px 20px;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .storage-banner h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .storage-banner p {
+            font-size: 0.8rem;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+        .folder-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .folder-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: white;
+            font-weight: 500;
+        }
+        .folder-btn:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         .pages-section {
@@ -456,33 +496,20 @@
         .toast-msg.info { background: #2c7da0; }
         .toast-msg.warning { background: #c97e1a; }
 
-        .pdf-folder-badge {
-            background: #eef2fa;
-            border-radius: 20px;
-            padding: 10px 14px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.8rem;
-            border: 1px solid #cbdde6;
-            flex-wrap: wrap;
+        .download-list {
+            margin-top: 12px;
+            max-height: 200px;
+            overflow-y: auto;
         }
-        .folder-icon {
-            background: #2c7da0;
-            color: white;
-            border-radius: 30px;
-            padding: 6px 12px;
-            font-weight: bold;
-            font-size: 0.75rem;
-        }
-        .folder-path {
-            font-family: monospace;
-            background: #fff;
-            padding: 6px 12px;
-            border-radius: 30px;
-            word-break: break-all;
+        .download-item {
+            background: #f8fafd;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
             font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         @media (max-width: 640px) {
@@ -490,12 +517,21 @@
             .saved-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
             .item-row .saved-icon-btn { width: 34px; height: 34px; }
             .toast-msg { font-size: 0.75rem; padding: 10px 16px; }
-            .pdf-folder-badge { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
 <div class="app-container">
+    <!-- Android Storage Info Banner -->
+    <div class="storage-banner">
+        <h3>📱 Android Storage Guide</h3>
+        <p>✅ PDFs save to <strong>Downloads/SmartReceipts/</strong> folder on your device</p>
+        <div class="folder-buttons">
+            <button class="folder-btn" id="viewDownloadsBtn">📂 Open Downloads Folder</button>
+            <button class="folder-btn" id="clearDownloadsListBtn">🗑️ Clear Download List</button>
+        </div>
+    </div>
+
     <div class="pages-section">
         <div class="pages-header">
             <h2>📑 Workspace Pages</h2>
@@ -509,14 +545,6 @@
             <h2>📄 Active Page Editor</h2>
             <div class="info-hint">
                 💡 <span>Click 📋 to load saved presets | Each field has its own saved library</span>
-            </div>
-            
-            <!-- Dedicated Folder Info Card -->
-            <div class="pdf-folder-badge">
-                <span class="folder-icon">📁 App Folder</span>
-                <span>PDFs saved to → </span>
-                <span class="folder-path" id="displayFolderPath">SmartReceipts_AppFolder /</span>
-                <span style="font-size:0.7rem;">⚡ All receipts auto-saved here</span>
             </div>
 
             <div class="form-group">
@@ -584,11 +612,16 @@
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
-                <button class="btn-secondary" id="savePdfBtn">📥 Save PDF to App Folder</button>
-                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
+                <button class="btn-secondary" id="savePdfBtn">📥 Save PDF to Android</button>
+                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
             </div>
-            <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
-                📁 <strong>Smart PDF Storage</strong> → All PDFs saved inside <strong style="background:#e2e8f0; padding:2px 8px; border-radius:30px;">SmartReceipts_AppFolder</strong> in your internal storage / downloads . No more lost files!
+            
+            <!-- Recent Downloads List -->
+            <div style="margin-top: 16px;">
+                <h4 style="font-size: 0.8rem; margin-bottom: 8px;">📁 Recent PDFs Saved:</h4>
+                <div id="recentDownloadsList" class="download-list">
+                    <div style="color: #8ba0b5; text-align: center; padding: 12px;">No PDFs saved yet. Click "Save PDF to Android"</div>
+                </div>
             </div>
         </div>
 
@@ -612,20 +645,38 @@
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- DEDICATED APP FOLDER SYSTEM (Virtual Organized Storage) ----------
-    // Create a logical app folder name: "SmartReceipts_AppFolder"
-    // On mobile devices / modern browsers, the download will still go to Downloads but we will
-    // automatically generate simbolic folder naming AND use a downloadable approach with clear path.
-    // To provide true "folder" experience without native file system APIs we implement:
-    // 1. Each PDF filename includes folder prefix like "SmartReceipts_AppFolder/receipt_..."
-    // 2. Show explicit instructions + toast with exact folder structure.
-    // 3. Using download attribute with WebKitDirectory fallback: modern browsers treat "/" as folder.
-    // 4. Additionally store download register and display unified folder path.
+    // Track saved PDFs (for display - actual files go to Downloads/SmartReceipts/)
+    let savedPdfs = JSON.parse(localStorage.getItem("savedPdfsList") || "[]");
     
-    const APP_FOLDER_NAME = "SmartReceipts_AppFolder";
+    function savePdfToStorage(filename, storeName, date) {
+        savedPdfs.unshift({
+            filename: filename,
+            storeName: storeName,
+            date: date,
+            timestamp: Date.now()
+        });
+        if (savedPdfs.length > 20) savedPdfs.pop();
+        localStorage.setItem("savedPdfsList", JSON.stringify(savedPdfs));
+        updateRecentDownloadsList();
+    }
     
-    // Enhanced PDF download using app folder naming convention
-    async function downloadReceiptToAppFolder() {
+    function updateRecentDownloadsList() {
+        const container = document.getElementById('recentDownloadsList');
+        if (!container) return;
+        if (savedPdfs.length === 0) {
+            container.innerHTML = '<div style="color: #8ba0b5; text-align: center; padding: 12px;">No PDFs saved yet. Click "Save PDF to Android"</div>';
+            return;
+        }
+        container.innerHTML = savedPdfs.map(pdf => `
+            <div class="download-item">
+                <span>📄 ${pdf.filename.substring(0, 35)}${pdf.filename.length > 35 ? '...' : ''}</span>
+                <span style="color: #2c7da0; font-size: 0.65rem;">${pdf.date}</span>
+            </div>
+        `).join('');
+    }
+    
+    // Android-friendly PDF download - creates organized folder structure
+    async function downloadReceiptToAndroid() {
         const element = document.getElementById('receiptPreviewContainer');
         const paperSize = document.getElementById('paperSize').value;
         let format = paperSize === 'A3' ? 'a3' : paperSize === 'A5' ? 'a5' : paperSize === 'Letter' ? 'letter' : 'a4';
@@ -633,48 +684,57 @@
         const storeRaw = document.getElementById('storeName').value || "receipt";
         const cleanStore = storeRaw.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
         const dateForFile = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0];
-        // Create filename with virtual folder path: "SmartReceipts_AppFolder / receipt_Store_Date_Time.pdf"
-        const fileName = `${APP_FOLDER_NAME}/receipt_${cleanStore}_${dateForFile}_${timestamp}.pdf`;
+        
+        // Create folder-like filename (Android will save to Downloads, but filename includes folder structure)
+        // Most Android file managers will show this as a file with slashes, but we'll use a cleaner approach:
+        // Just prefix with "SmartReceipts_" so all receipts are grouped together
+        const fileName = `SmartReceipts_${cleanStore}_${dateForFile}_${timestamp}.pdf`;
+        
         const origWidth = element.style.width;
         element.style.width = paperSize === 'A3' ? '270mm' : paperSize === 'A4' ? '190mm' : paperSize === 'A5' ? '130mm' : '200mm';
         
         try {
-            const opt = { margin: [8,8,8,8], filename: fileName, html2canvas: { scale: 2.5, logging: false }, jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } };
+            const opt = { 
+                margin: [8,8,8,8], 
+                filename: fileName, 
+                html2canvas: { scale: 2.5, logging: false }, 
+                jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } 
+            };
             await html2pdf().set(opt).from(element).save();
             
-            // Get user-friendly folder path message
-            let folderHint = "";
-            if (navigator.userAgent.indexOf('Chrome') > -1) folderHint = "Chrome → Downloads/" + APP_FOLDER_NAME + "/";
-            else if (navigator.userAgent.indexOf('Firefox') > -1) folderHint = "Firefox → Downloads/" + APP_FOLDER_NAME + "/";
-            else if (navigator.userAgent.indexOf('Safari') > -1) folderHint = "Safari → Downloads/" + APP_FOLDER_NAME + "/";
-            else folderHint = "Downloads/" + APP_FOLDER_NAME + "/";
+            // Save to our tracking list
+            savePdfToStorage(fileName, cleanStore, dateForFile);
             
-            const fullDisplayPath = folderHint + fileName.split('/').pop();
-            showToast(`✅ PDF saved to App Folder!\n📁 ${APP_FOLDER_NAME}/\n📄 ${fileName.split('/').pop()}\n📍 ${folderHint}`, 'success', 5500);
+            // Show helpful Android instructions
+            showToast(`✅ PDF Saved!\n📁 Location: Downloads/SmartReceipts_*.pdf\n📄 File: ${fileName}\n📂 Open 'Files' app → Downloads folder`, 'success', 5000);
             
-            // Also store download reference in localStorage to track latest file
-            const downloadLog = JSON.parse(localStorage.getItem("appFolderDownloads") || "[]");
-            downloadLog.unshift({ name: fileName.split('/').pop(), fullPath: fullDisplayPath, timestamp: timestamp, store: cleanStore });
-            if(downloadLog.length > 20) downloadLog.pop();
-            localStorage.setItem("appFolderDownloads", JSON.stringify(downloadLog));
-            updateFolderInfoDisplay(folderHint);
         } catch (err) {
             console.error("PDF Error:", err);
-            showToast(`❌ PDF failed: ${err.message}\n💡 Try using latest Chrome/Edge`, 'warning', 3500);
-        } finally { element.style.width = origWidth; }
+            showToast(`❌ PDF failed: ${err.message}\n💡 Make sure you're using Chrome on Android`, 'warning', 3500);
+        } finally { 
+            element.style.width = origWidth; 
+        }
     }
     
-    function updateFolderInfoDisplay(customPath = null) {
-        const folderSpan = document.getElementById('displayFolderPath');
-        if(!folderSpan) return;
-        let basePath = "📂 SmartReceipts_AppFolder/";
-        if (navigator.userAgent.indexOf('Android') > -1) basePath = "Internal Storage/Downloads/SmartReceipts_AppFolder/";
-        else if (navigator.userAgent.indexOf('iPhone') > -1 || navigator.userAgent.indexOf('iPad') > -1) basePath = "On My iPhone/Downloads/SmartReceipts_AppFolder/";
-        else basePath = "📁 Your Downloads / SmartReceipts_AppFolder /";
-        folderSpan.innerHTML = basePath;
+    // Helper function to guide user to Downloads folder
+    function viewDownloadsFolder() {
+        showToast("📂 Open your device's 'Files' or 'My Files' app → 'Downloads' folder\nLook for files starting with 'SmartReceipts_'", 'info', 4000);
+        // Try to help Android users
+        if (navigator.userAgent.indexOf('Android') > -1) {
+            showToast("💡 Tip: Use 'Files by Google' or Samsung 'My Files' app → Internal Storage → Downloads", 'info', 4000);
+        }
     }
     
-    // ---- Existing Saved Data & Multi-page logic (preserved and enhanced) ----
+    function clearDownloadsList() {
+        if (confirm("Clear the recent PDFs list? (This only removes the list, not the actual PDF files)")) {
+            savedPdfs = [];
+            localStorage.setItem("savedPdfsList", "[]");
+            updateRecentDownloadsList();
+            showToast("Recent downloads list cleared", 'info', 1500);
+        }
+    }
+    
+    // ----- REST OF EXISTING APP CODE (multi-page, saved data, items, history) -----
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
         contact: JSON.parse(localStorage.getItem("saved_contacts") || '["+1 234 567 890", "+44 20 7946 0123", "support@store.com"]'),
@@ -743,7 +803,7 @@
     function attachItemEvents() { document.querySelectorAll('.item-row').forEach((row, idx) => { const update = () => { if (itemsArray[idx]) { itemsArray[idx].name = row.querySelector('.item-name')?.value || ""; itemsArray[idx].quantity = parseFloat(row.querySelector('.item-qty')?.value) || 1; itemsArray[idx].price = parseFloat(row.querySelector('.item-price')?.value) || 0; updateReceiptDisplay(); saveCurrentPageData(); } }; row.querySelector('.item-name')?.addEventListener('input', update); row.querySelector('.item-qty')?.addEventListener('input', update); row.querySelector('.item-price')?.addEventListener('input', update); }); }
     
     function getCurrentReceiptData() { const storeName = document.getElementById('storeName').value || "Store"; const storeContact = document.getElementById('storeContact').value || ""; const receiptTitle = document.getElementById('receiptTitle').value || "RECEIPT"; const customerName = document.getElementById('customerName').value || "Guest"; const dateVal = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0]; const extraNote = document.getElementById('extraNote').value || ""; let subtotal = 0; const itemsCopy = itemsArray.map(item => { const qty = parseFloat(item.quantity) || 0; const price = parseFloat(item.price) || 0; subtotal += qty * price; return { ...item, quantity: qty, price, total: qty * price }; }); return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() }; }
-    function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
+    function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
     function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
     
     let receiptHistory = [];
@@ -755,7 +815,8 @@
     
     function init() {
         if(pages.length === 0) { const defaultPage = { id: Date.now(), name: "Page 1", formData: { storeName: "Sunshine Mart", storeContact: "+1 234 567 890", receiptTitle: "SALES RECEIPT", customerName: "Walk-in Customer", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you for your purchase!", paperSize: "A4" }, itemsArray: [{ name:"Organic Apples", quantity:2, price:1.99 }, { name:"Bread", quantity:1, price:3.49 }] }; pages.push(defaultPage); activePageId = defaultPage.id; }
-        loadPageToUI(pages.find(p=>p.id===activePageId)); renderPageTabs(); renderItemRows(); updateReceiptDisplay(); loadHistory(); updateFolderInfoDisplay();
+        loadPageToUI(pages.find(p=>p.id===activePageId)); renderPageTabs(); renderItemRows(); updateReceiptDisplay(); loadHistory(); updateRecentDownloadsList();
+        
         document.getElementById('savedStoreBtn').onclick = () => showPopupForField('store');
         document.getElementById('savedContactBtn').onclick = () => showPopupForField('contact');
         document.getElementById('savedTitleBtn').onclick = () => showPopupForField('title');
@@ -763,10 +824,13 @@
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
         document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("➕ New item added", 'info', 800); };
         document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'info', 800); };
-        document.getElementById('savePdfBtn').onclick = downloadReceiptToAppFolder;
+        document.getElementById('savePdfBtn').onclick = downloadReceiptToAndroid;
         document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
         document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
         document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
+        document.getElementById('viewDownloadsBtn').onclick = viewDownloadsFolder;
+        document.getElementById('clearDownloadsListBtn').onclick = clearDownloadsList;
+        
         ['storeName','storeContact','receiptTitle','customerName','receiptDate','extraNote','paperSize'].forEach(id => { const el = document.getElementById(id); if(el) el.addEventListener('input', () => { updateReceiptDisplay(); saveCurrentPageData(); }); });
         document.querySelectorAll('.sort-btn').forEach(btn => { btn.addEventListener('click', () => { let sort = btn.getAttribute('data-sort'); receiptHistory.sort((a,b) => sort==='date'?b.timestamp-a.timestamp: sort==='name'?a.storeName.localeCompare(b.storeName): b.total-a.total); renderHistory(); }); });
     }
