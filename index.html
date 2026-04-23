@@ -1,12 +1,11 @@
-Here is an HTML document that creates a professional receipt generator with robust PDF export functionality, specifically optimized for Android devices.
+Here is an HTML document that changes the "Save as PDF" button to a "Print" button, which opens a dialog box with options to print or save as PDF.
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt Studio | PDF Export for Android</title>
-    <!-- html2pdf bundle for reliable PDF generation -->
+    <title>Pro Receipt | Smart Saved Info + Print Dialog with PDF Option | Multi-Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -31,7 +30,6 @@ Here is an HTML document that creates a professional receipt generator with robu
             gap: 20px;
         }
 
-        /* pages section */
         .pages-section {
             background: white;
             border-radius: 28px;
@@ -66,7 +64,6 @@ Here is an HTML document that creates a professional receipt generator with robu
             border-radius: 40px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         .page-tabs {
@@ -89,7 +86,6 @@ Here is an HTML document that creates a professional receipt generator with robu
             align-items: center;
             gap: 8px;
             white-space: nowrap;
-            transition: all 0.2s;
         }
 
         .page-tab.active {
@@ -164,7 +160,6 @@ Here is an HTML document that creates a professional receipt generator with robu
             display: flex;
             align-items: center;
             gap: 6px;
-            flex-wrap: wrap;
         }
 
         .field-with-saved {
@@ -193,203 +188,197 @@ Here is an HTML document that creates a professional receipt generator with robu
             font-weight: bold;
         }
 
+        .saved-icon-btn:hover {
+            background: #2c7da0;
+            color: white;
+            border-color: #2c7da0;
+        }
+
         .item-saved-btn {
+            background: #f0f4f8;
+            border: 1.5px solid #cbdde6;
+            border-radius: 30px;
             width: 36px;
             height: 36px;
             font-size: 1rem;
+            cursor: pointer;
+            color: #2c7da0;
         }
 
-        .popup-overlay {
+        /* Custom Print Dialog (Modal) */
+        .dialog-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 2000;
+            backdrop-filter: blur(4px);
+            z-index: 3000;
             display: flex;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(4px);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .popup-menu {
+        .print-dialog {
             background: white;
-            border-radius: 32px;
-            width: 340px;
-            max-width: 90vw;
-            max-height: 70vh;
+            border-radius: 40px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
             overflow: hidden;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.25);
-            display: flex;
-            flex-direction: column;
+            animation: fadeSlideUp 0.2s ease-out;
         }
 
-        .popup-header {
-            padding: 18px 20px;
-            background: #2c7da0;
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dialog-header {
+            background: #1e2b3c;
             color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .popup-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .popup-list {
-            padding: 12px;
-            max-height: 350px;
-            overflow-y: auto;
-        }
-
-        .popup-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2edf2;
-            cursor: pointer;
-        }
-
-        .popup-value {
-            font-weight: 500;
-            color: #1f3b4c;
-        }
-
-        .popup-delete {
-            background: none;
-            border: none;
-            color: #e07c6c;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 4px 8px;
-        }
-
-        .popup-add {
-            padding: 14px 16px;
-            border-top: 1px solid #e2edf2;
-            display: flex;
-            gap: 10px;
-        }
-
-        .popup-add input {
-            flex: 1;
-            padding: 10px 14px;
-            border-radius: 40px;
-            border: 1.5px solid #cbdde6;
-        }
-
-        .popup-add button {
-            background: #2c7da0;
-            border: none;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 40px;
+            padding: 20px 24px;
+            font-size: 1.4rem;
             font-weight: 600;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            color: #1f3b4c;
-            margin-bottom: 6px;
-            display: block;
-            font-size: 0.85rem;
-        }
-
-        .form-group input, .form-group textarea, .form-group select {
-            padding: 12px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 24px;
-            font-size: 16px;
-            width: 100%;
-        }
-
-        .items-section {
-            background: #f8fafd;
-            border-radius: 24px;
-            padding: 14px;
-            margin: 1rem 0;
-        }
-
-        .items-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 14px;
-            flex-wrap: wrap;
             align-items: center;
         }
 
-        .btn-add {
-            background: #2c7da0;
-            border: none;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 40px;
+        .dialog-header span {
+            font-size: 1.8rem;
             cursor: pointer;
-        }
-
-        .item-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .item-name { flex: 3; min-width: 120px; }
-        .item-qty { flex: 1; min-width: 70px; }
-        .item-price { flex: 1; min-width: 85px; }
-
-        .item-row input {
-            padding: 10px;
-            border-radius: 20px;
-            border: 1.5px solid #d1d9e8;
-            width: 100%;
-        }
-
-        .remove-item {
-            background: #e07c6c;
-            border: none;
-            color: white;
+            background: rgba(255,255,255,0.2);
             width: 36px;
             height: 36px;
             border-radius: 30px;
-            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
         }
 
-        .action-buttons {
+        .dialog-header span:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        .dialog-body {
+            padding: 24px 24px 20px;
+        }
+
+        .dialog-option {
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .dialog-option.selected {
+            border-color: #2c7da0;
+            background: #eef4fc;
+            box-shadow: 0 4px 10px rgba(44,125,160,0.15);
+        }
+
+        .dialog-option-icon {
+            font-size: 2rem;
+        }
+
+        .dialog-option-text strong {
+            font-size: 1.1rem;
+            color: #1f3b4c;
+        }
+
+        .dialog-option-text p {
+            font-size: 0.8rem;
+            color: #5f7d9c;
+            margin-top: 4px;
+        }
+
+        .paper-options {
+            margin: 18px 0 12px;
+            background: #f1f5f9;
+            border-radius: 28px;
+            padding: 12px 16px;
+        }
+
+        .paper-options label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1e2b3c;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .paper-options select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 60px;
+            border: 1px solid #cbdde6;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .dialog-actions {
             display: flex;
             gap: 12px;
             margin-top: 20px;
-            flex-wrap: wrap;
+            margin-bottom: 8px;
         }
 
-        .btn-primary, .btn-secondary, .btn-save-history {
+        .dialog-btn {
+            flex: 1;
+            background: #2c7da0;
             border: none;
-            padding: 12px 16px;
+            padding: 14px;
             border-radius: 60px;
             font-weight: 600;
+            color: white;
+            font-size: 1rem;
             cursor: pointer;
-            flex: 1;
+            transition: 0.1s;
             text-align: center;
         }
 
-        .btn-primary { background: #2c7da0; color: white; }
-        .btn-secondary { background: #1e6f3f; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .btn-save-history { background: #e6a017; color: white; }
+        .dialog-btn.cancel {
+            background: #e2e8f0;
+            color: #1f3b4c;
+        }
+
+        .dialog-btn.print-action {
+            background: #1e6f3f;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2a36;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 60px;
+            z-index: 3100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            font-size: 0.85rem;
+            text-align: center;
+            max-width: 90vw;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            font-family: monospace;
+        }
+        
+        .toast-msg.success { background: #1e6f3f; border-left: 4px solid #7ae9a7; }
+        .toast-msg.info { background: #2c7da0; }
+        .toast-msg.warning { background: #c97e1a; }
 
         .receipt-paper {
             width: 100%;
@@ -415,46 +404,10 @@ Here is an HTML document that creates a professional receipt generator with robu
         .load-history-btn, .delete-history-btn { background: #2c7da0; border: none; color: white; padding: 6px 12px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
         .delete-history-btn { background: #e07c6c; }
 
-        /* Toast with path info */
-        .toast-msg {
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e2a36;
-            color: white;
-            padding: 14px 24px;
-            border-radius: 60px;
-            z-index: 2100;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            font-size: 0.85rem;
-            text-align: center;
-            max-width: 90vw;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            font-family: monospace;
-            white-space: pre-line;
-        }
-        
-        .toast-msg.success { background: #1e6f3f; border-left: 4px solid #7ae9a7; }
-        .toast-msg.info { background: #2c7da0; }
-        .toast-msg.warning { background: #c97e1a; }
-
-        .pdf-download-badge {
-            background: #eef2fa;
-            border-radius: 20px;
-            margin-top: 12px;
-            padding: 8px 12px;
-            font-size: 0.7rem;
-            text-align: center;
-            color: #1f5e7e;
-        }
-
         @media (max-width: 640px) {
             .field-with-saved { gap: 6px; }
-            .saved-icon-btn { width: 38px; height: 38px; }
-            .toast-msg { font-size: 0.75rem; padding: 10px 16px; white-space: normal; }
+            .saved-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
+            .dialog-option-icon { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -471,9 +424,7 @@ Here is an HTML document that creates a professional receipt generator with robu
     <div class="main-grid">
         <div class="input-card">
             <h2>📄 Active Page Editor</h2>
-            <div class="info-hint">
-                💡 Tap 📋 to load saved presets | Works with Android Chrome / Samsung Internet
-            </div>
+            <div class="info-hint">💡 <span>Click 📋 to load saved presets | Each field has its own saved library</span></div>
             
             <div class="form-group">
                 <label>🏢 Store Name</label>
@@ -482,7 +433,6 @@ Here is an HTML document that creates a professional receipt generator with robu
                     <button type="button" class="saved-icon-btn" data-field="store" id="savedStoreBtn">📋</button>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>📞 Contact</label>
                 <div class="field-with-saved">
@@ -490,7 +440,6 @@ Here is an HTML document that creates a professional receipt generator with robu
                     <button type="button" class="saved-icon-btn" data-field="contact" id="savedContactBtn">📋</button>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>🧾 Receipt Title</label>
                 <div class="field-with-saved">
@@ -498,7 +447,6 @@ Here is an HTML document that creates a professional receipt generator with robu
                     <button type="button" class="saved-icon-btn" data-field="title" id="savedTitleBtn">📋</button>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>👤 Customer Name</label>
                 <div class="field-with-saved">
@@ -506,16 +454,15 @@ Here is an HTML document that creates a professional receipt generator with robu
                     <button type="button" class="saved-icon-btn" data-field="customer" id="savedCustomerBtn">📋</button>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>📅 Date</label>
                 <input type="date" id="receiptDate">
             </div>
-
             <div class="form-group">
-                <label>📄 PDF Paper Size</label>
+                <label>📄 PDF Paper Size (for Save as PDF)</label>
                 <select id="paperSize">
-                    <option value="A4" selected>A4 (210x297mm) – Best for Android</option>
+                    <option value="A3">A3 (297x420mm)</option>
+                    <option value="A4" selected>A4 (210x297mm)</option>
                     <option value="A5">A5 (148x210mm)</option>
                     <option value="Letter">Letter (8.5x11in)</option>
                 </select>
@@ -523,7 +470,7 @@ Here is an HTML document that creates a professional receipt generator with robu
 
             <div class="items-section">
                 <div class="items-header">
-                    <h3>🛒 Items <span style="font-size:0.7rem;">(📋 preset per row)</span></h3>
+                    <h3>🛒 Items <span style="font-size:0.7rem; font-weight:normal;">(📋 preset per row)</span></h3>
                     <button type="button" class="btn-add" id="addItemBtn">+ Add Item</button>
                 </div>
                 <div id="itemsContainer"></div>
@@ -539,36 +486,37 @@ Here is an HTML document that creates a professional receipt generator with robu
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
-                <button class="btn-secondary" id="savePdfBtn">📥 Download PDF for Android</button>
-                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
+                <!-- REPLACED: Save as PDF button -> Print Button that opens Dialog -->
+                <button class="btn-secondary" id="openPrintDialogBtn">🖨️ Print / Save as PDF</button>
+                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
             </div>
-            <div class="pdf-download-badge">
-                ⚡ PDF will be saved directly to your Android device's "Downloads" folder.<br>
-                ✅ Works on Chrome, Samsung Internet, Edge. Tap "Download PDF" → file appears in your file manager.
+            <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
+                🖨️ <strong>Print / PDF</strong> → Click Print button → Choose "Print" (physical printer) or "Save as PDF" inside dialog.<br>
+                💾 <strong>History</strong> → Stores data locally inside app (reloadable, not PDF)
             </div>
         </div>
 
         <div class="preview-card">
-            <h3>🧾 Receipt Preview (PDF snapshot)</h3>
+            <h3>🧾 Receipt Preview</h3>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
         </div>
     </div>
 
     <div class="history-card">
-        <h2>📜 Receipt History (in-app storage)</h2>
+        <h2>📜 Receipt History <span style="font-size:0.75rem; font-weight:normal;">(in-app storage)</span></h2>
         <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
             <button class="sort-btn" data-sort="date" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">📅 Sort by Date</button>
             <button class="sort-btn" data-sort="name" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">🔤 Sort by Store</button>
             <button class="sort-btn" data-sort="total" style="background:#e2e8f0; border:none; padding:8px 16px; border-radius:40px;">💰 Sort by Total</button>
             <button id="clearAllHistoryBtn" style="background:#dc2626; color:white; border:none; padding:8px 16px; border-radius:40px;">🗑️ Clear All</button>
         </div>
-        <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet.</div></div>
+        <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet. Create and save to history!</div></div>
     </div>
 </div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // ---------- SAVED PRESETS STORAGE ----------
+    // ---------- SAVED INFO STORAGE ----------
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
         contact: JSON.parse(localStorage.getItem("saved_contacts") || '["+1 234 567 890", "+44 20 7946 0123", "support@store.com"]'),
@@ -587,7 +535,7 @@ Here is an HTML document that creates a professional receipt generator with robu
         localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
     }
 
-    function showToast(message, type = 'info', duration = 3500) {
+    function showToast(message, type = 'info', duration = 3000) {
         const toast = document.getElementById('toastMsg');
         toast.textContent = message;
         toast.className = `toast-msg ${type}`;
@@ -611,12 +559,12 @@ Here is an HTML document that creates a professional receipt generator with robu
         if (fieldType === 'itemPreset') { items = savedData.itemPresets; fieldLabel = "Item Preset (Name - Price)"; }
         else { items = savedData[fieldType]; const labels = { store: "Store Name", contact: "Contact", title: "Receipt Title", customer: "Customer Name", note: "Footer Note" }; fieldLabel = labels[fieldType] || fieldType; }
         const overlay = document.createElement('div'); overlay.className = 'popup-overlay';
-        overlay.innerHTML = `<div class="popup-menu"><div class="popup-header"><span>📌 Saved ${fieldLabel}</span><button class="popup-close">✕</button></div><div class="popup-list" id="popupList">${items.length === 0 ? '<div class="empty-saved">✨ No saved items.</div>' : items.map((val, idx) => `<div class="popup-item" data-value="${escapeHtml(val)}" data-index="${idx}"><span class="popup-value">${escapeHtml(val)}</span><button class="popup-delete" data-index="${idx}">🗑️</button></div>`).join('')}</div><div class="popup-add"><input type="text" id="newSavedValue" placeholder="New ${fieldLabel.toLowerCase()}..."><button id="addSavedBtn">+ Save</button></div></div>`;
+        overlay.innerHTML = `<div class="popup-menu"><div class="popup-header"><span>📌 Saved ${fieldLabel}</span><button class="popup-close">✕</button></div><div class="popup-list" id="popupList">${items.length === 0 ? '<div class="empty-saved">✨ No saved items. Add one below.</div>' : items.map((val, idx) => `<div class="popup-item" data-value="${escapeHtml(val)}" data-index="${idx}"><span class="popup-value">${escapeHtml(val)}</span><button class="popup-delete" data-index="${idx}">🗑️</button></div>`).join('')}</div><div class="popup-add"><input type="text" id="newSavedValue" placeholder="New ${fieldLabel.toLowerCase()}..."><button id="addSavedBtn">+ Save</button></div></div>`;
         document.body.appendChild(overlay);
         overlay.querySelector('.popup-close').addEventListener('click', closePopup);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) closePopup(); });
         overlay.querySelectorAll('.popup-item').forEach(el => { el.addEventListener('click', (e) => { if (e.target.classList.contains('popup-delete')) return; const value = el.getAttribute('data-value'); if (fieldType === 'itemPreset' && activeItemRowIndex !== null) applyItemPresetToRow(activeItemRowIndex, value); else { const inputMap = { store: 'storeName', contact: 'storeContact', title: 'receiptTitle', customer: 'customerName', note: 'extraNote' }; const inputId = inputMap[fieldType]; if (inputId) document.getElementById(inputId).value = value; updateReceiptDisplay(); saveCurrentPageData(); showToast(`✓ Filled: ${value}`, 'success', 1200); } closePopup(); }); });
-        overlay.querySelectorAll('.popup-delete').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-index')); if (!isNaN(idx)) { if (fieldType === 'itemPreset') savedData.itemPresets.splice(idx,1); else savedData[fieldType].splice(idx,1); persistSavedData(); showToast(`🗑️ Deleted`, 'warning', 1000); closePopup(); showPopupForField(fieldType, activeItemRowIndex); } }); });
+        overlay.querySelectorAll('.popup-delete').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-index')); if (!isNaN(idx)) { if (fieldType === 'itemPreset') savedData.itemPresets.splice(idx,1); else savedData[fieldType].splice(idx,1); persistSavedData(); showToast(`🗑️ Deleted saved ${fieldLabel}`, 'warning', 1000); closePopup(); showPopupForField(fieldType, activeItemRowIndex); } }); });
         const addBtn = overlay.querySelector('#addSavedBtn'); const newInput = overlay.querySelector('#newSavedValue');
         addBtn.addEventListener('click', () => { const newVal = newInput.value.trim(); if (newVal) { if (fieldType === 'itemPreset') savedData.itemPresets.unshift(newVal); else savedData[fieldType].unshift(newVal); persistSavedData(); showToast(`💾 Saved "${newVal}"`, 'success', 1200); closePopup(); showPopupForField(fieldType, activeItemRowIndex); } else showToast("Please enter a value", 'warning', 1000); });
         newInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addBtn.click(); });
@@ -632,7 +580,7 @@ Here is an HTML document that creates a professional receipt generator with robu
     let pages = []; let activePageId = null; let itemsArray = [{ name: "Organic Apples", quantity: 2, price: 1.99 }, { name: "Whole Wheat Bread", quantity: 1, price: 3.49 }];
     function saveCurrentPageData() { if (!activePageId) return; const page = pages.find(p => p.id === activePageId); if (page) { page.formData = { storeName: document.getElementById('storeName').value, storeContact: document.getElementById('storeContact').value, receiptTitle: document.getElementById('receiptTitle').value, customerName: document.getElementById('customerName').value, dateVal: document.getElementById('receiptDate').value, extraNote: document.getElementById('extraNote').value, paperSize: document.getElementById('paperSize').value }; page.itemsArray = JSON.parse(JSON.stringify(itemsArray)); } }
     function loadPageToUI(page) { if (!page) return; document.getElementById('storeName').value = page.formData.storeName || ""; document.getElementById('storeContact').value = page.formData.storeContact || ""; document.getElementById('receiptTitle').value = page.formData.receiptTitle || ""; document.getElementById('customerName').value = page.formData.customerName || ""; document.getElementById('receiptDate').value = page.formData.dateVal || new Date().toISOString().split('T')[0]; document.getElementById('extraNote').value = page.formData.extraNote || ""; document.getElementById('paperSize').value = page.formData.paperSize || "A4"; itemsArray = page.itemsArray.map(i => ({...i})); renderItemRows(); updateReceiptDisplay(); }
-    function createNewPage() { saveCurrentPageData(); const newId = Date.now(); const pageNum = pages.length + 1; const newPage = { id: newId, name: `Page ${pageNum}`, formData: { storeName: "New Store", storeContact: "", receiptTitle: "RECEIPT", customerName: "Guest", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you!", paperSize: "A4" }, itemsArray: [{ name: "Sample Item", quantity: 1, price: 9.99 }] }; pages.push(newPage); activePageId = newId; renderPageTabs(); loadPageToUI(newPage); showToast(`📄 New page created`, 'info', 1200); }
+    function createNewPage() { saveCurrentPageData(); const newId = Date.now(); const pageNum = pages.length + 1; const newPage = { id: newId, name: `Page ${pageNum}`, formData: { storeName: "New Store", storeContact: "", receiptTitle: "RECEIPT", customerName: "Guest", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you!", paperSize: "A4" }, itemsArray: [{ name: "Sample Item", quantity: 1, price: 9.99 }] }; pages.push(newPage); activePageId = newId; renderPageTabs(); loadPageToUI(newPage); showToast(`📄 New page "${newPage.name}" created`, 'info', 1200); }
     function renderPageTabs() { const container = document.getElementById('pageTabsContainer'); if (!container) return; if (pages.length === 0) { container.innerHTML = '<span>Click + to add page</span>'; return; } container.innerHTML = pages.map(p => `<div class="page-tab ${activePageId === p.id ? 'active' : ''}" data-id="${p.id}"><span>📄 ${escapeHtml(p.name)}</span><span class="delete-page" data-id="${p.id}">✕</span></div>`).join(''); container.querySelectorAll('.page-tab').forEach(tab => { tab.addEventListener('click', (e) => { if (e.target.classList.contains('delete-page')) return; const pid = parseInt(tab.getAttribute('data-id')); saveCurrentPageData(); activePageId = pid; const target = pages.find(p => p.id === pid); if (target) loadPageToUI(target); renderPageTabs(); }); const del = tab.querySelector('.delete-page'); if (del) { del.addEventListener('click', (e) => { e.stopPropagation(); const pid = parseInt(del.getAttribute('data-id')); if (pages.length === 1) { showToast("Cannot delete last page", 'warning', 1000); return; } pages = pages.filter(p => p.id !== pid); if (activePageId === pid) { activePageId = pages[0]?.id || null; if (activePageId) loadPageToUI(pages[0]); } renderPageTabs(); if (activePageId) loadPageToUI(pages.find(p => p.id === activePageId)); showToast("Page deleted", 'info', 800); }); } }); }
     
     function renderItemRows() { const container = document.getElementById('itemsContainer'); if (!container) return; container.innerHTML = ''; itemsArray.forEach((item, idx) => { const row = document.createElement('div'); row.className = 'item-row'; row.innerHTML = `<input type="text" class="item-name" value="${escapeHtml(item.name)}" placeholder="Item"><input type="number" class="item-qty" value="${item.quantity}" step="1" min="1"><input type="number" class="item-price" value="${item.price}" step="0.01" min="0"><button class="saved-icon-btn item-saved-btn" data-item-idx="${idx}" title="Saved item presets">📋</button><button class="remove-item" data-idx="${idx}">✕</button>`; container.appendChild(row); }); document.querySelectorAll('.remove-item').forEach(btn => { btn.addEventListener('click', (e) => { const idx = parseInt(btn.getAttribute('data-idx')); if (!isNaN(idx)) { itemsArray.splice(idx, 1); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("Item removed", 'info', 800); } }); }); document.querySelectorAll('.item-saved-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.getAttribute('data-item-idx')); if (!isNaN(idx)) showPopupForField('itemPreset', idx); }); }); attachItemEvents(); }
@@ -642,46 +590,117 @@ Here is an HTML document that creates a professional receipt generator with robu
     function generateReceiptHTML(data) { let itemsHtml = data.items.map(i => `<tr><td>${escapeHtml(i.name)}</td><td style="text-align:center">${i.quantity}</td><td style="text-align:right">$${i.price.toFixed(2)}</td><td style="text-align:right">$${(i.quantity*i.price).toFixed(2)}</td></tr>`).join(''); return `<div class="receipt-header"><div class="receipt-title">${escapeHtml(data.storeName.toUpperCase())}</div><div>${escapeHtml(data.receiptTitle)}</div><div>${escapeHtml(data.storeContact)}</div></div><div><strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br><small>ID: ${data.receiptId}</small></div><table class="receipt-items"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div class="total-row"><div>Subtotal: $${data.subtotal.toFixed(2)}</div><div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div></div><div class="footer-note">${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *</div>`; }
     function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
 
-    // ========== ENHANCED PDF DOWNLOAD FOR ANDROID ==========
-    async function downloadReceiptAsPDF() {
+    // ---------- CUSTOM PRINT DIALOG with "Print" or "Save as PDF" actions ----------
+    function showPrintDialog() {
+        // save latest page data
+        saveCurrentPageData();
+        const currentPaperSize = document.getElementById('paperSize').value;
+        let overlay = document.createElement('div');
+        overlay.className = 'dialog-overlay';
+        overlay.innerHTML = `
+            <div class="print-dialog">
+                <div class="dialog-header">
+                    🖨️ Print Options
+                    <span class="close-dialog">✕</span>
+                </div>
+                <div class="dialog-body">
+                    <div class="dialog-option" data-action="print" id="optionPrint">
+                        <div class="dialog-option-icon">🖨️</div>
+                        <div class="dialog-option-text"><strong>Print with Printer</strong><p>Send receipt to physical printer</p></div>
+                    </div>
+                    <div class="dialog-option" data-action="savepdf" id="optionSavePdf">
+                        <div class="dialog-option-icon">📄💾</div>
+                        <div class="dialog-option-text"><strong>Save as PDF file</strong><p>Generate PDF and download to device</p></div>
+                    </div>
+                    <div class="paper-options">
+                        <label>📏 Paper Size (for PDF generation)</label>
+                        <select id="dialogPaperSize">
+                            <option value="A3" ${currentPaperSize === 'A3' ? 'selected' : ''}>A3 (297x420mm)</option>
+                            <option value="A4" ${currentPaperSize === 'A4' ? 'selected' : ''}>A4 (210x297mm)</option>
+                            <option value="A5" ${currentPaperSize === 'A5' ? 'selected' : ''}>A5 (148x210mm)</option>
+                            <option value="Letter" ${currentPaperSize === 'Letter' ? 'selected' : ''}>Letter (8.5x11in)</option>
+                        </select>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="dialog-btn cancel close-dialog">Cancel</button>
+                        <button class="dialog-btn print-action" id="confirmActionBtn">Continue</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        let selectedAction = 'print'; // default
+        const optionPrint = overlay.querySelector('#optionPrint');
+        const optionSave = overlay.querySelector('#optionSavePdf');
+        function setActive(active) { optionPrint.classList.remove('selected'); optionSave.classList.remove('selected'); if(active === 'print') optionPrint.classList.add('selected'); else optionSave.classList.add('selected'); }
+        setActive('print');
+        optionPrint.addEventListener('click', () => { selectedAction = 'print'; setActive('print'); });
+        optionSave.addEventListener('click', () => { selectedAction = 'savepdf'; setActive('savepdf'); });
+        
+        const closeButtons = overlay.querySelectorAll('.close-dialog');
+        closeButtons.forEach(btn => btn.addEventListener('click', () => overlay.remove()));
+        overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.remove(); });
+        
+        const confirmBtn = overlay.querySelector('#confirmActionBtn');
+        confirmBtn.addEventListener('click', async () => {
+            const selectedPaper = overlay.querySelector('#dialogPaperSize').value;
+            // update global paper size temporarily for PDF if needed
+            const originalPaper = document.getElementById('paperSize').value;
+            if(selectedAction === 'savepdf') {
+                document.getElementById('paperSize').value = selectedPaper;
+                await performSaveAsPDF();
+                document.getElementById('paperSize').value = originalPaper;
+                showToast(`✅ PDF saved successfully!`, 'success', 3000);
+            } else if (selectedAction === 'print') {
+                // Trigger browser print dialog using receipt preview content
+                const receiptElement = document.getElementById('receiptPreviewContainer');
+                const printWindow = window.open('', '_blank');
+                if (printWindow) {
+                    const styles = document.querySelector('style').innerHTML;
+                    printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html><head><title>Print Receipt</title>
+                        <style>${styles} body { padding: 20mm; background: white; } .receipt-paper { max-width: 100%; box-shadow: none; } </style>
+                        </head><body>${receiptElement.outerHTML}</body></html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.print();
+                    printWindow.onafterprint = () => printWindow.close();
+                    showToast(`🖨️ Print dialog opened`, 'info', 2000);
+                } else {
+                    showToast(`⚠️ Popup blocked! Allow popups for print preview.`, 'warning', 2500);
+                }
+            }
+            overlay.remove();
+        });
+    }
+    
+    async function performSaveAsPDF() {
         const element = document.getElementById('receiptPreviewContainer');
         const paperSize = document.getElementById('paperSize').value;
-        let format = paperSize === 'A4' ? 'a4' : paperSize === 'A5' ? 'a5' : 'letter';
+        let format = paperSize === 'A3' ? 'a3' : paperSize === 'A5' ? 'a5' : paperSize === 'Letter' ? 'letter' : 'a4';
         const timestamp = Date.now();
-        const storeRaw = document.getElementById('storeName').value || "receipt";
-        const cleanStore = storeRaw.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+        const storeName = document.getElementById('storeName').value || "receipt";
+        const cleanStore = storeName.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
         const fileName = `receipt_${cleanStore}_${timestamp}.pdf`;
-        const originalWidth = element.style.width;
-        element.style.width = paperSize === 'A4' ? '190mm' : paperSize === 'A5' ? '130mm' : '200mm';
-        
+        const origWidth = element.style.width;
+        element.style.width = paperSize === 'A3' ? '270mm' : paperSize === 'A4' ? '190mm' : paperSize === 'A5' ? '130mm' : '200mm';
         try {
-            const opt = { 
-                margin: [8, 8, 8, 8], 
-                filename: fileName, 
-                html2canvas: { scale: 2.8, logging: false, useCORS: false }, 
-                jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } 
-            };
+            const opt = { margin: [8,8,8,8], filename: fileName, html2canvas: { scale: 2.5, logging: false }, jsPDF: { unit: 'mm', format: format, orientation: 'portrait' } };
             await html2pdf().set(opt).from(element).save();
-            
-            // Android-friendly success message
-            const isAndroid = /android/i.test(navigator.userAgent);
-            let locationMsg = isAndroid ? "📁 Saved to 'Downloads' folder (accessible via My Files / File Manager)" : "📁 PDF saved in your default Downloads folder";
-            showToast(`✅ PDF Exported!\n📄 ${fileName}\n${locationMsg}`, 'success', 5000);
-        } catch (err) {
-            console.error("PDF error:", err);
-            showToast(`❌ PDF failed: ${err.message || "Try again"}`, 'warning', 3000);
-        } finally { element.style.width = originalWidth; }
+        } catch (err) { console.error(err); showToast(`PDF error: ${err.message}`, 'warning', 2000); }
+        finally { element.style.width = origWidth; }
     }
 
-    // ---------- HISTORY (in-app) ----------
+    // History (in-app)
     let receiptHistory = [];
     function loadHistory() { const stored = localStorage.getItem("receiptHistory"); if(stored) receiptHistory = JSON.parse(stored); renderHistory(); }
     function saveHistoryStorage() { localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory)); }
-    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast(`💾 Receipt saved to in-app history (not PDF)`, 'info', 2000); }
+    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast(`💾 Receipt saved to in-app history`, 'info', 2500); }
     function renderHistory() { const container = document.getElementById('historyList'); if(!container) return; if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">📭 No saved receipts in history.</div>'; return; } container.innerHTML = receiptHistory.map(e => `<div class="history-item"><div><strong>🏪 ${escapeHtml(e.storeName)}</strong><br>📅 ${e.date} | 👤 ${escapeHtml(e.customerName)}<br>💰 $${e.total.toFixed(2)}</div><div><button class="load-history-btn" data-id="${e.id}">Load</button><button class="delete-history-btn" data-id="${e.id}">Delete</button></div></div>`).join(''); document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(h=>h.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📂 Loaded from history`, 'success', 1500); } })); document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(h=>h.id!==id); saveHistoryStorage(); renderHistory(); showToast("🗑️ Deleted from history", 'info', 800); })); }
-    function clearAllHistory() { if(confirm("⚠️ Delete ALL saved receipts from in-app history? (PDF files remain in Downloads)")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("All history cleared", 'info', 2000); } }
+    function clearAllHistory() { if(confirm("⚠️ Delete ALL saved receipts from in-app history?")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("All history cleared", 'info', 2000); } }
 
-    // ---------- INITIALIZE ----------
+    // Init
     function init() {
         if(pages.length === 0) { const defaultPage = { id: Date.now(), name: "Page 1", formData: { storeName: "Sunshine Mart", storeContact: "+1 234 567 890", receiptTitle: "SALES RECEIPT", customerName: "Walk-in Customer", dateVal: new Date().toISOString().split('T')[0], extraNote: "Thank you for your purchase!", paperSize: "A4" }, itemsArray: [{ name:"Organic Apples", quantity:2, price:1.99 }, { name:"Bread", quantity:1, price:3.49 }] }; pages.push(defaultPage); activePageId = defaultPage.id; }
         loadPageToUI(pages.find(p=>p.id===activePageId)); renderPageTabs(); renderItemRows(); updateReceiptDisplay(); loadHistory();
@@ -691,8 +710,8 @@ Here is an HTML document that creates a professional receipt generator with robu
         document.getElementById('savedCustomerBtn').onclick = () => showPopupForField('customer');
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
         document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("➕ New item added", 'info', 800); };
-        document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'info', 800); };
-        document.getElementById('savePdfBtn').onclick = downloadReceiptAsPDF;
+        document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'success', 800); };
+        document.getElementById('openPrintDialogBtn').onclick = showPrintDialog;
         document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
         document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
         document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
