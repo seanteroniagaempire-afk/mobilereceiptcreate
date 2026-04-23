@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | A3 Print + History | Mobile Ready</title>
+    <title>Pro Receipt | A3 Print + History | PDF Ready</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * {
@@ -169,7 +169,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-primary, .btn-secondary, .btn-print, .btn-save-history {
+        .btn-primary, .btn-secondary, .btn-print, .btn-save-history, .btn-pdf-preview {
             border: none;
             padding: 12px 16px;
             border-radius: 60px;
@@ -189,6 +189,7 @@
         .btn-secondary { background: #4b6e8a; color: white; }
         .btn-print { background: #5f7f6b; color: white; }
         .btn-save-history { background: #e6a017; color: white; }
+        .btn-pdf-preview { background: #9b6b43; color: white; }
 
         .receipt-paper {
             width: 100%;
@@ -272,6 +273,35 @@
             border-top: 1px dashed #bbb;
             padding-top: 8px;
             color: #666;
+        }
+
+        .preview-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .preview-header-row h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e3b4a;
+            margin: 0;
+        }
+        .pdf-preview-btn-sm {
+            background: #9b6b43;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .history-toolbar {
@@ -376,7 +406,7 @@
             padding: 30px;
         }
 
-        /* PRINT STYLES - ensures dialog appears on Android & proper A3 scaling */
+        /* PRINT STYLES */
         @media print {
             body * {
                 visibility: hidden;
@@ -400,7 +430,6 @@
                 padding: 8mm;
                 box-sizing: border-box;
             }
-            /* Force page size from our dynamic @page injection */
         }
 
         .toast-msg {
@@ -504,9 +533,12 @@
         </div>
 
         <div class="preview-card">
-            <h3>🧾 Receipt Preview</h3>
+            <div class="preview-header-row">
+                <h3>🧾 Receipt Preview</h3>
+                <button class="pdf-preview-btn-sm" id="downloadPreviewPdfBtn">📑 Download Preview PDF</button>
+            </div>
             <div id="receiptPreviewContainer" class="receipt-paper"></div>
-            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Print dialog will open on Android. Select printer & paper size (A3).</p>
+            <p style="font-size: 0.7rem; margin-top: 12px; color: #5b7a95;">* Use "Download Preview PDF" to save current receipt as PDF file. Print dialog supports A3 scaling.</p>
         </div>
     </div>
 
@@ -713,7 +745,47 @@
         if (newItems.length) itemsArray = newItems;
     }
 
-    // FIX: Ensures print dialog appears on Android by creating a visible iframe / dynamic content & triggering window.print() after user gesture
+    // ----- NEW: Download Preview as PDF using html2pdf with dynamic paper size -----
+    async function downloadPreviewAsPDF() {
+        syncItemsFromDOM();
+        updateReceiptDisplay();
+        const element = document.getElementById('receiptPreviewContainer');
+        if (!element) return;
+        const paperSize = document.getElementById('paperSize').value;
+        let pdfFormat = 'a3';
+        if (paperSize === 'A3') pdfFormat = 'a3';
+        else if (paperSize === 'A4') pdfFormat = 'a4';
+        else if (paperSize === 'A5') pdfFormat = 'a5';
+        else if (paperSize === 'Letter') pdfFormat = 'letter';
+        
+        // Temporarily set width to ensure best PDF rendering matching paper dimensions
+        const originalWidth = element.style.width;
+        const originalMaxWidth = element.style.maxWidth;
+        if (paperSize === 'A3') element.style.width = '297mm';
+        else if (paperSize === 'A4') element.style.width = '210mm';
+        else if (paperSize === 'Letter') element.style.width = '216mm';
+        else if (paperSize === 'A5') element.style.width = '148mm';
+        element.style.maxWidth = '100%';
+        
+        const opt = {
+            margin: [8, 8, 8, 8],
+            filename: `receipt_preview_${Date.now()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2.5, letterRendering: true, useCORS: false },
+            jsPDF: { unit: 'mm', format: pdfFormat, orientation: 'portrait' }
+        };
+        try {
+            await html2pdf().set(opt).from(element).save();
+            showToast(`Preview PDF downloaded (${paperSize})`, 2000);
+        } catch (err) {
+            console.error(err);
+            alert("PDF error: " + err.message);
+        } finally {
+            element.style.width = originalWidth;
+            element.style.maxWidth = originalMaxWidth;
+        }
+    }
+
     function printReceipt() {
         syncItemsFromDOM();
         updateReceiptDisplay();
@@ -721,7 +793,6 @@
         const receiptHTML = generateReceiptHTMLFromData(receiptData);
         const paperSize = document.getElementById('paperSize').value;
         
-        // Map paper size for @page CSS rule
         let pageSizeCSS = '';
         switch(paperSize) {
             case 'A3': pageSizeCSS = 'A3 portrait'; break;
@@ -731,7 +802,6 @@
             default: pageSizeCSS = 'A3 portrait';
         }
         
-        // Create a fresh printable container, ensures Android triggers print dialog
         const printDiv = document.getElementById('printableReceipt');
         printDiv.style.display = 'block';
         printDiv.innerHTML = `
@@ -756,17 +826,14 @@
             </style>
         `;
         
-        // Force async print to ensure DOM fully renders before print dialog on Android
         setTimeout(() => {
             window.print();
-            // Reset after print dialog closes (or lose focus)
             setTimeout(() => {
                 printDiv.style.display = 'none';
                 printDiv.innerHTML = '';
             }, 1500);
         }, 100);
-        
-        showToast(`📄 Print dialog opening (${paperSize})...`, 1800);
+        showToast(`📄 Print dialog (${paperSize})`, 1800);
     }
 
     async function downloadReceiptAsPDF() {
@@ -775,14 +842,17 @@
         const element = document.getElementById('receiptPreviewContainer');
         if (!element) return;
         const paperSize = document.getElementById('paperSize').value;
-        let pdfFormat = 'a4';
+        let pdfFormat = 'a3';
         if (paperSize === 'A3') pdfFormat = 'a3';
         else if (paperSize === 'A4') pdfFormat = 'a4';
         else if (paperSize === 'A5') pdfFormat = 'a5';
         else if (paperSize === 'Letter') pdfFormat = 'letter';
         
         const originalWidth = element.style.width;
-        element.style.width = paperSize === 'A3' ? '297mm' : (paperSize === 'A4' ? '210mm' : (paperSize === 'Letter' ? '216mm' : '148mm'));
+        if (paperSize === 'A3') element.style.width = '297mm';
+        else if (paperSize === 'A4') element.style.width = '210mm';
+        else if (paperSize === 'Letter') element.style.width = '216mm';
+        else if (paperSize === 'A5') element.style.width = '148mm';
         
         const opt = {
             margin: [5, 5, 5, 5],
@@ -930,6 +1000,9 @@
             updateReceiptDisplay();
             showToast("Item added", 900);
         });
+        // New handler for "Download Preview PDF" button
+        document.getElementById('downloadPreviewPdfBtn')?.addEventListener('click', downloadPreviewAsPDF);
+        
         ['storeName', 'storeContact', 'receiptTitle', 'customerName', 'receiptDate', 'extraNote'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.addEventListener('input', () => updateReceiptDisplay());
