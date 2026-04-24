@@ -451,26 +451,25 @@
             font-family: monospace;
         }
         
-        .toast-msg.success { background: #1e6f3f; border-left: 4px solid #7ae9a7; }
+        .toast-msg.success { background: #1e6f3f; }
         .toast-msg.info { background: #2c7da0; }
         .toast-msg.warning { background: #c97e1a; }
 
-        /* Print-specific styles - hide UI elements when printing */
+        /* Print styles - hide everything except receipt */
         @media print {
             body * {
                 visibility: hidden;
             }
-            .print-receipt-only, .print-receipt-only * {
+            .print-receipt-area, .print-receipt-area * {
                 visibility: visible;
             }
-            .print-receipt-only {
-                position: absolute;
-                left: 0;
+            .print-receipt-area {
+                position: fixed;
                 top: 0;
+                left: 0;
                 width: 100%;
-                margin: 0;
                 padding: 20px;
-                box-shadow: none;
+                background: white;
             }
             .no-print {
                 display: none !important;
@@ -480,7 +479,6 @@
         @media (max-width: 640px) {
             .field-with-saved { gap: 6px; }
             .saved-icon-btn { width: 38px; height: 38px; font-size: 1rem; }
-            .item-row .saved-icon-btn { width: 34px; height: 34px; }
             .toast-msg { font-size: 0.75rem; padding: 10px 16px; }
         }
     </style>
@@ -557,12 +555,11 @@
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
-                <button class="btn-secondary" id="printSaveBtn">🖨️ Print / Save as PDF</button>
+                <button class="btn-secondary" id="printReceiptBtn">🖨️ Print / Save as PDF</button>
                 <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
             </div>
             <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
-                🖨️ <strong>Print / Save as PDF</strong> → Opens native browser print dialog.<br>
-                💡 From print dialog, choose "Save as PDF" or your printer.<br>
+                🖨️ <strong>Print / Save as PDF</strong> → Opens print dialog. Choose "Save as PDF" or your printer.<br>
                 💾 <strong>History</strong> → Stores data locally inside app (reloadable, not PDF)
             </div>
         </div>
@@ -584,12 +581,12 @@
         <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet. Create and save to history!</div></div>
     </div>
 </div>
+
+<!-- Hidden print container that will be populated when needed -->
+<div id="printContainer" style="display: none;"></div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
-    // Hidden print container
-    let printContainer = null;
-    
     // ---------- SAVED INFO STORAGE ----------
     let savedData = {
         store: JSON.parse(localStorage.getItem("saved_store_names") || '["Sunshine Mart", "Green Grocer", "Tech Store"]'),
@@ -609,7 +606,7 @@
         localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
     }
 
-    function showToast(message, type = 'info', duration = 3000) {
+    function showToast(message, type = 'info', duration = 2000) {
         const toast = document.getElementById('toastMsg');
         toast.textContent = message;
         toast.className = `toast-msg ${type}`;
@@ -661,123 +658,75 @@
     function attachItemEvents() { document.querySelectorAll('.item-row').forEach((row, idx) => { const update = () => { if (itemsArray[idx]) { itemsArray[idx].name = row.querySelector('.item-name')?.value || ""; itemsArray[idx].quantity = parseFloat(row.querySelector('.item-qty')?.value) || 1; itemsArray[idx].price = parseFloat(row.querySelector('.item-price')?.value) || 0; updateReceiptDisplay(); saveCurrentPageData(); } }; row.querySelector('.item-name')?.addEventListener('input', update); row.querySelector('.item-qty')?.addEventListener('input', update); row.querySelector('.item-price')?.addEventListener('input', update); }); }
     
     function getCurrentReceiptData() { const storeName = document.getElementById('storeName').value || "Store"; const storeContact = document.getElementById('storeContact').value || ""; const receiptTitle = document.getElementById('receiptTitle').value || "RECEIPT"; const customerName = document.getElementById('customerName').value || "Guest"; const dateVal = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0]; const extraNote = document.getElementById('extraNote').value || ""; let subtotal = 0; const itemsCopy = itemsArray.map(item => { const qty = parseFloat(item.quantity) || 0; const price = parseFloat(item.price) || 0; subtotal += qty * price; return { ...item, quantity: qty, price, total: qty * price }; }); return { storeName, storeContact, receiptTitle, customerName, dateVal, extraNote, items: itemsCopy, subtotal, grandTotal: subtotal, receiptId: 'RCPT-'+Date.now().toString().slice(-6), timestamp: Date.now() }; }
+    
     function generateReceiptHTML(data) { 
-        let itemsHtml = data.items.map(i => `<tr><td style="padding: 4px 2px;">${escapeHtml(i.name)}</td><td style="text-align:center; padding: 4px 2px;">${i.quantity}</td><td style="text-align:right; padding: 4px 2px;">$${i.price.toFixed(2)}</td><td style="text-align:right; padding: 4px 2px;">$${(i.quantity*i.price).toFixed(2)}</td>`).join('');
-        return `<div style="font-family: 'Courier New', monospace; font-size: 12px; color: #1e2a36; max-width: 100%;">
-            <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px dashed #aaa; padding-bottom: 8px;">
-                <div style="font-size: 18px; font-weight: bold;">${escapeHtml(data.storeName.toUpperCase())}</div>
-                <div>${escapeHtml(data.receiptTitle)}</div>
-                <div>${escapeHtml(data.storeContact)}</div>
+        let itemsHtml = data.items.map(i => `<tr><td style="padding: 6px 2px;">${escapeHtml(i.name)}</td><td style="text-align:center; padding: 6px 2px;">${i.quantity}</td><td style="text-align:right; padding: 6px 2px;">$${i.price.toFixed(2)}</td><td style="text-align:right; padding: 6px 2px;">$${(i.quantity*i.price).toFixed(2)}</td>`).join('');
+        return `
+            <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #1e2a36; max-width: 100%; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px dashed #aaa; padding-bottom: 8px;">
+                    <div style="font-size: 18px; font-weight: bold;">${escapeHtml(data.storeName.toUpperCase())}</div>
+                    <div>${escapeHtml(data.receiptTitle)}</div>
+                    <div>${escapeHtml(data.storeContact)}</div>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br>
+                    <small>ID: ${data.receiptId}</small>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
+                    <thead><tr style="border-bottom: 1px dotted #aaa;"><th style="text-align: left; padding: 6px 2px;">Item</th><th style="text-align: center; padding: 6px 2px;">Qty</th><th style="text-align: right; padding: 6px 2px;">Price</th><th style="text-align: right; padding: 6px 2px;">Total</th></tr></thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+                <div style="text-align: right; border-top: 2px dashed #333; padding-top: 8px; margin-top: 8px;">
+                    <div>Subtotal: $${data.subtotal.toFixed(2)}</div>
+                    <div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div>
+                </div>
+                <div style="text-align: center; font-size: 9px; border-top: 1px dashed #bbb; padding-top: 8px; margin-top: 12px;">
+                    ${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *
+                </div>
             </div>
-            <div style="margin-bottom: 12px;">
-                <strong>Date:</strong> ${escapeHtml(data.dateVal)} &nbsp; <strong>Customer:</strong> ${escapeHtml(data.customerName)}<br>
-                <small>ID: ${data.receiptId}</small>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; margin: 12px 0;">
-                <thead><tr style="border-bottom: 1px dotted #aaa;"><th style="text-align: left; padding: 4px 2px;">Item</th><th style="text-align: center; padding: 4px 2px;">Qty</th><th style="text-align: right; padding: 4px 2px;">Price</th><th style="text-align: right; padding: 4px 2px;">Total</th></tr></thead>
-                <tbody>${itemsHtml}</tbody>
-            </table>
-            <div style="text-align: right; border-top: 2px dashed #333; padding-top: 8px; margin-top: 8px;">
-                <div>Subtotal: $${data.subtotal.toFixed(2)}</div>
-                <div><strong>TOTAL: $${data.grandTotal.toFixed(2)}</strong></div>
-            </div>
-            <div style="text-align: center; font-size: 9px; border-top: 1px dashed #bbb; padding-top: 8px; margin-top: 12px;">
-                ${escapeHtml(data.extraNote) || "Thank you!"}<br>* Digital Receipt *
-            </div>
-        </div>`;
+        `;
     }
+    
     function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
 
-    // ---------- NATIVE PRINT / SAVE AS PDF (Universal method) ----------
-    function printOrSaveAsPDF() {
+    // ---------- PRINT FUNCTION (Works directly without new window) ----------
+    function printReceipt() {
         saveCurrentPageData();
         const receiptData = getCurrentReceiptData();
         const receiptHTML = generateReceiptHTML(receiptData);
         
-        // Create a hidden iframe or new window for printing
-        const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,menubar=yes');
-        if (!printWindow) {
-            showToast("⚠️ Popup blocked! Please allow popups for this site.", 'warning', 3000);
-            return;
-        }
+        // Create a temporary div for printing
+        const printDiv = document.createElement('div');
+        printDiv.className = 'print-receipt-area';
+        printDiv.innerHTML = receiptHTML;
+        document.body.appendChild(printDiv);
         
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Print Receipt - ${escapeHtml(receiptData.storeName)}</title>
-                <meta charset="UTF-8">
-                <style>
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
-                    body {
-                        font-family: 'Courier New', monospace;
-                        background: white;
-                        padding: 20mm;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                    }
-                    .receipt-container {
-                        max-width: 210mm;
-                        margin: 0 auto;
-                        background: white;
-                    }
-                    @media print {
-                        body {
-                            padding: 0;
-                            margin: 0;
-                        }
-                        .receipt-container {
-                            margin: 0;
-                            padding: 12mm;
-                        }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="receipt-container">
-                    ${receiptHTML}
-                </div>
-                <script>
-                    // Auto-trigger print dialog when window loads
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                        }, 500);
-                    }
-                    
-                    // Close window after print or if user cancels
-                    window.onafterprint = function() {
-                        window.close();
-                    }
-                    
-                    // Also close if user navigates away
-                    setTimeout(function() {
-                        if (!window.closed) {
-                            window.close();
-                        }
-                    }, 30000);
-                <\/script>
-            </body>
-            </html>
-        `);
+        // Trigger print dialog
+        window.print();
         
-        printWindow.document.close();
-        showToast("🖨️ Print dialog opening... Choose 'Save as PDF' or your printer.", 'success', 2500);
+        // Remove the temporary div after printing
+        window.onafterprint = function() {
+            if (printDiv && printDiv.parentNode) {
+                printDiv.parentNode.removeChild(printDiv);
+            }
+            showToast("✓ Print dialog closed", 'success', 1500);
+        };
+        
+        // Fallback timeout in case afterprint doesn't fire
+        setTimeout(() => {
+            if (printDiv && printDiv.parentNode) {
+                printDiv.parentNode.removeChild(printDiv);
+            }
+        }, 10000);
     }
 
     // History (in-app)
     let receiptHistory = [];
     function loadHistory() { const stored = localStorage.getItem("receiptHistory"); if(stored) receiptHistory = JSON.parse(stored); renderHistory(); }
     function saveHistoryStorage() { localStorage.setItem("receiptHistory", JSON.stringify(receiptHistory)); }
-    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast(`💾 Receipt saved to in-app history (not a PDF file)`, 'info', 2500); }
-    function renderHistory() { const container = document.getElementById('historyList'); if(!container) return; if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">📭 No saved receipts in history. Create and click "Save to History"</div>'; return; } container.innerHTML = receiptHistory.map(e => `<div class="history-item"><div><strong>🏪 ${escapeHtml(e.storeName)}</strong><br>📅 ${e.date} | 👤 ${escapeHtml(e.customerName)}<br>💰 $${e.total.toFixed(2)}</div><div><button class="load-history-btn" data-id="${e.id}">Load</button><button class="delete-history-btn" data-id="${e.id}">Delete</button></div></div>`).join(''); document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(h=>h.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📂 Loaded from history: ${fd.storeName}`, 'success', 1500); } })); document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(h=>h.id!==id); saveHistoryStorage(); renderHistory(); showToast("🗑️ Deleted from history", 'info', 800); })); }
-    function clearAllHistory() { if(confirm("⚠️ Delete ALL saved receipts from in-app history? (PDF files are not affected)")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("All history cleared (PDF files remain in your Downloads)", 'info', 2000); } }
+    function saveToHistory() { saveCurrentPageData(); const data = getCurrentReceiptData(); receiptHistory.unshift({ id: Date.now(), storeName: data.storeName, customerName: data.customerName, date: data.dateVal, total: data.grandTotal, timestamp: data.timestamp, fullData: data }); if (receiptHistory.length > 50) receiptHistory = receiptHistory.slice(0,50); saveHistoryStorage(); renderHistory(); showToast(`💾 Receipt saved to history`, 'info', 2000); }
+    function renderHistory() { const container = document.getElementById('historyList'); if(!container) return; if(receiptHistory.length===0) { container.innerHTML='<div class="empty-history">📭 No saved receipts in history.</div>'; return; } container.innerHTML = receiptHistory.map(e => `<div class="history-item"><div><strong>🏪 ${escapeHtml(e.storeName)}</strong><br>📅 ${e.date} | 👤 ${escapeHtml(e.customerName)}<br>💰 $${e.total.toFixed(2)}</div><div><button class="load-history-btn" data-id="${e.id}">Load</button><button class="delete-history-btn" data-id="${e.id}">Delete</button></div></div>`).join(''); document.querySelectorAll('.load-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); const entry=receiptHistory.find(h=>h.id===id); if(entry){ saveCurrentPageData(); const fd=entry.fullData; document.getElementById('storeName').value=fd.storeName; document.getElementById('storeContact').value=fd.storeContact; document.getElementById('receiptTitle').value=fd.receiptTitle; document.getElementById('customerName').value=fd.customerName; document.getElementById('receiptDate').value=fd.dateVal; document.getElementById('extraNote').value=fd.extraNote; itemsArray=fd.items.map(i=>({name:i.name, quantity:i.quantity, price:i.price})); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast(`📂 Loaded from history`, 'success', 1500); } })); document.querySelectorAll('.delete-history-btn').forEach(btn=>btn.addEventListener('click',()=>{ const id=parseInt(btn.dataset.id); receiptHistory=receiptHistory.filter(h=>h.id!==id); saveHistoryStorage(); renderHistory(); showToast("🗑️ Deleted from history", 'info', 800); })); }
+    function clearAllHistory() { if(confirm("⚠️ Delete ALL saved receipts from in-app history?")){ receiptHistory=[]; saveHistoryStorage(); renderHistory(); showToast("All history cleared", 'info', 2000); } }
 
     // Init
     function init() {
@@ -799,7 +748,7 @@
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
         document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("➕ New item added", 'info', 800); };
         document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'info', 800); };
-        document.getElementById('printSaveBtn').onclick = printOrSaveAsPDF;
+        document.getElementById('printReceiptBtn').onclick = printReceipt;
         document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
         document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
         document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
