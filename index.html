@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Pro Receipt | Smart Saved Info + Print/Save as PDF | Multi-Page</title>
+    <title>Pro Receipt | Smart Saved Info + Direct Save | Multi-Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -393,7 +395,7 @@
             flex-wrap: wrap;
         }
 
-        .btn-primary, .btn-secondary, .btn-save-history {
+        .btn-primary, .btn-secondary, .btn-save-history, .btn-pdf {
             border: none;
             padding: 12px 16px;
             border-radius: 60px;
@@ -405,6 +407,7 @@
 
         .btn-primary { background: #2c7da0; color: white; }
         .btn-secondary { background: #4b6e8a; color: white; }
+        .btn-pdf { background: #dc2626; color: white; }
         .btn-save-history { background: #e6a017; color: white; }
 
         .receipt-paper {
@@ -448,33 +451,11 @@
             text-align: center;
             max-width: 90vw;
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-            font-family: monospace;
         }
         
         .toast-msg.success { background: #1e6f3f; }
         .toast-msg.info { background: #2c7da0; }
         .toast-msg.warning { background: #c97e1a; }
-
-        /* Print styles - hide everything except receipt */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            .print-receipt-area, .print-receipt-area * {
-                visibility: visible;
-            }
-            .print-receipt-area {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                padding: 20px;
-                background: white;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
 
         @media (max-width: 640px) {
             .field-with-saved { gap: 6px; }
@@ -537,6 +518,15 @@
                 <input type="date" id="receiptDate">
             </div>
 
+            <div class="form-group">
+                <label>📄 Image/PDF Quality</label>
+                <select id="imageQuality">
+                    <option value="1">Standard (Faster)</option>
+                    <option value="2" selected>High Quality</option>
+                    <option value="3">Very High (Slower)</option>
+                </select>
+            </div>
+
             <div class="items-section">
                 <div class="items-header">
                     <h3>🛒 Items <span style="font-size:0.7rem; font-weight:normal;">(📋 preset per row)</span></h3>
@@ -555,12 +545,14 @@
 
             <div class="action-buttons">
                 <button class="btn-primary" id="updateReceiptBtn">🔄 Refresh Preview</button>
-                <button class="btn-secondary" id="printReceiptBtn">🖨️ Print / Save as PDF</button>
-                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History (in-app)</button>
+                <button class="btn-pdf" id="saveAsImageBtn">📸 Save as Image</button>
+                <button class="btn-secondary" id="saveAsPdfBtn">📑 Save as PDF</button>
+                <button class="btn-save-history" id="saveToHistoryBtn">💾 Save to History</button>
             </div>
             <div class="info-hint" style="margin-top: 12px; background: #f0f6fa; border-radius: 20px; padding: 8px 12px;">
-                🖨️ <strong>Print / Save as PDF</strong> → Opens print dialog. Choose "Save as PDF" or your printer.<br>
-                💾 <strong>History</strong> → Stores data locally inside app (reloadable, not PDF)
+                📸 <strong>Save as Image</strong> → Directly saves receipt as PNG image to your device<br>
+                📑 <strong>Save as PDF</strong> → Saves as PDF file using html2pdf<br>
+                💾 <strong>History</strong> → Stores data locally inside app (reloadable)
             </div>
         </div>
 
@@ -581,9 +573,6 @@
         <div id="historyList" class="history-list"><div class="empty-history">No saved receipts yet. Create and save to history!</div></div>
     </div>
 </div>
-
-<!-- Hidden print container that will be populated when needed -->
-<div id="printContainer" style="display: none;"></div>
 <div id="toastMsg" class="toast-msg"></div>
 
 <script>
@@ -606,7 +595,7 @@
         localStorage.setItem("saved_item_presets", JSON.stringify(savedData.itemPresets));
     }
 
-    function showToast(message, type = 'info', duration = 2000) {
+    function showToast(message, type = 'info', duration = 2500) {
         const toast = document.getElementById('toastMsg');
         toast.textContent = message;
         toast.className = `toast-msg ${type}`;
@@ -662,7 +651,7 @@
     function generateReceiptHTML(data) { 
         let itemsHtml = data.items.map(i => `<tr><td style="padding: 6px 2px;">${escapeHtml(i.name)}</td><td style="text-align:center; padding: 6px 2px;">${i.quantity}</td><td style="text-align:right; padding: 6px 2px;">$${i.price.toFixed(2)}</td><td style="text-align:right; padding: 6px 2px;">$${(i.quantity*i.price).toFixed(2)}</td>`).join('');
         return `
-            <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #1e2a36; max-width: 100%; padding: 20px;">
+            <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #1e2a36; max-width: 100%; background: white; padding: 20px;">
                 <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px dashed #aaa; padding-bottom: 8px;">
                     <div style="font-size: 18px; font-weight: bold;">${escapeHtml(data.storeName.toUpperCase())}</div>
                     <div>${escapeHtml(data.receiptTitle)}</div>
@@ -689,35 +678,63 @@
     
     function updateReceiptDisplay() { const container = document.getElementById('receiptPreviewContainer'); if (container) container.innerHTML = generateReceiptHTML(getCurrentReceiptData()); }
 
-    // ---------- PRINT FUNCTION (Works directly without new window) ----------
-    function printReceipt() {
-        saveCurrentPageData();
-        const receiptData = getCurrentReceiptData();
-        const receiptHTML = generateReceiptHTML(receiptData);
+    // ---------- SAVE AS IMAGE (Using html2canvas) ----------
+    async function saveAsImage() {
+        const element = document.getElementById('receiptPreviewContainer');
+        const quality = parseInt(document.getElementById('imageQuality').value);
+        const scale = quality === 1 ? 1.5 : (quality === 2 ? 2.5 : 3.5);
         
-        // Create a temporary div for printing
-        const printDiv = document.createElement('div');
-        printDiv.className = 'print-receipt-area';
-        printDiv.innerHTML = receiptHTML;
-        document.body.appendChild(printDiv);
+        showToast("📸 Generating image...", 'info', 1500);
         
-        // Trigger print dialog
-        window.print();
+        try {
+            const canvas = await html2canvas(element, {
+                scale: scale,
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: false
+            });
+            
+            const timestamp = Date.now();
+            const storeName = document.getElementById('storeName').value || "receipt";
+            const cleanStore = storeName.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+            const fileName = `receipt_${cleanStore}_${timestamp}.png`;
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            showToast(`✅ Image saved successfully!`, 'success', 2500);
+        } catch (err) {
+            console.error("Image generation error:", err);
+            showToast(`❌ Failed to save image: ${err.message}`, 'warning', 3000);
+        }
+    }
+
+    // ---------- SAVE AS PDF (Using html2pdf) ----------
+    async function saveAsPDF() {
+        const element = document.getElementById('receiptPreviewContainer');
+        const timestamp = Date.now();
+        const storeName = document.getElementById('storeName').value || "receipt";
+        const cleanStore = storeName.replace(/[^a-z0-9]/gi, '_').substring(0, 20);
+        const fileName = `receipt_${cleanStore}_${timestamp}.pdf`;
         
-        // Remove the temporary div after printing
-        window.onafterprint = function() {
-            if (printDiv && printDiv.parentNode) {
-                printDiv.parentNode.removeChild(printDiv);
-            }
-            showToast("✓ Print dialog closed", 'success', 1500);
-        };
+        showToast("📑 Generating PDF...", 'info', 1500);
         
-        // Fallback timeout in case afterprint doesn't fire
-        setTimeout(() => {
-            if (printDiv && printDiv.parentNode) {
-                printDiv.parentNode.removeChild(printDiv);
-            }
-        }, 10000);
+        try {
+            const opt = {
+                margin: [8, 8, 8, 8],
+                filename: fileName,
+                html2canvas: { scale: 2.5, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            await html2pdf().set(opt).from(element).save();
+            showToast(`✅ PDF saved successfully!`, 'success', 2500);
+        } catch (err) {
+            console.error("PDF generation error:", err);
+            showToast(`❌ Failed to save PDF: ${err.message}`, 'warning', 3000);
+        }
     }
 
     // History (in-app)
@@ -748,7 +765,8 @@
         document.getElementById('savedNoteBtn').onclick = () => showPopupForField('note');
         document.getElementById('addItemBtn').onclick = () => { itemsArray.push({ name: "New Item", quantity: 1, price: 0 }); renderItemRows(); updateReceiptDisplay(); saveCurrentPageData(); showToast("➕ New item added", 'info', 800); };
         document.getElementById('updateReceiptBtn').onclick = () => { updateReceiptDisplay(); saveCurrentPageData(); showToast("🔄 Preview refreshed", 'info', 800); };
-        document.getElementById('printReceiptBtn').onclick = printReceipt;
+        document.getElementById('saveAsImageBtn').onclick = saveAsImage;
+        document.getElementById('saveAsPdfBtn').onclick = saveAsPDF;
         document.getElementById('saveToHistoryBtn').onclick = saveToHistory;
         document.getElementById('clearAllHistoryBtn').onclick = clearAllHistory;
         document.getElementById('globalAddPageBtn').onclick = () => { saveCurrentPageData(); createNewPage(); };
